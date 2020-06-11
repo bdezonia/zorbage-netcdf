@@ -1,4 +1,4 @@
-Zorbage-netcdf: code for loading netcdf files into zorbage data structures for further processing
+zorbage-netcdf: code for loading netcdf files into zorbage data structures for further processing
 
 To learn more about Zorbage please visit https://github.com/bdezonia/zorbage
 

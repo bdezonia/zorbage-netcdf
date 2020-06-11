@@ -1,8 +1,33 @@
-package zorbage.netcdf;
+/*
+ * zorbage-netcdf: code for loading netcdf files into zorbage data structures for further processing
+ *
+ * Copyright (C) 2020 Barry DeZonia
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+package nom.bdezonia.zorbage.netcdf;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +41,6 @@ import nom.bdezonia.zorbage.procedure.Procedure3;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.sampling.SamplingCartesianIntegerGrid;
 import nom.bdezonia.zorbage.sampling.SamplingIterator;
-import nom.bdezonia.zorbage.tuple.Tuple12;
 import nom.bdezonia.zorbage.type.float32.real.Float32Member;
 import nom.bdezonia.zorbage.type.float64.real.Float64Member;
 import nom.bdezonia.zorbage.type.int1.UnsignedInt1Member;
@@ -34,40 +58,56 @@ import ucar.nc2.NetcdfFile;
 import ucar.nc2.NetcdfFiles;
 import ucar.nc2.Variable;
 
-public class Main
-{
-	public Tuple12<
-		Map<String,String>,
-		List<MultiDimDataSource<UnsignedInt1Member>>,
-		List<MultiDimDataSource<SignedInt8Member>>,
-		List<MultiDimDataSource<UnsignedInt8Member>>,
-		List<MultiDimDataSource<SignedInt16Member>>,
-		List<MultiDimDataSource<UnsignedInt16Member>>,
-		List<MultiDimDataSource<SignedInt32Member>>,
-		List<MultiDimDataSource<UnsignedInt32Member>>,
-		List<MultiDimDataSource<SignedInt64Member>>,
-		List<MultiDimDataSource<UnsignedInt64Member>>,
-		List<MultiDimDataSource<Float32Member>>,
-		List<MultiDimDataSource<Float64Member>>>
-	loadDataSources(NetcdfFile file)
-	throws IOException
-	{
-		Map<String,String> strings = readStrings(file);
-		List<MultiDimDataSource<UnsignedInt1Member>> bools = readBools(file);
-		List<MultiDimDataSource<SignedInt8Member>>  bytes = readBytes(file);
-		List<MultiDimDataSource<UnsignedInt8Member>> ubytes = readUBytes(file);
-		List<MultiDimDataSource<SignedInt16Member>> shorts = readShorts(file);
-		List<MultiDimDataSource<UnsignedInt16Member>> ushorts = readUShorts(file);
-		List<MultiDimDataSource<SignedInt32Member>> ints = readInts(file);
-		List<MultiDimDataSource<UnsignedInt32Member>> uints = readUInts(file);
-		List<MultiDimDataSource<SignedInt64Member>> longs = readLongs(file);
-		List<MultiDimDataSource<UnsignedInt64Member>> ulongs = readULongs(file);
-		List<MultiDimDataSource<Float32Member>> floats = readFloats(file);
-		List<MultiDimDataSource<Float64Member>> doubles = readDoubles(file);
-		return new Tuple12<>(strings, bools, bytes, ubytes, shorts, ushorts, ints, uints, longs, ulongs, floats, doubles);
+/**
+ * 
+ * @author Barry DeZonia
+ *
+ */
+public class NetCDF {
+
+	/**
+	 * 
+	 */
+	public static class DataBundle {
+		public Map<String,String> chars;
+		public List<MultiDimDataSource<UnsignedInt1Member>> int1s;
+		public List<MultiDimDataSource<SignedInt8Member>> int8s;
+		public List<MultiDimDataSource<UnsignedInt8Member>> uint8s;
+		public List<MultiDimDataSource<SignedInt16Member>> int16s;
+		public List<MultiDimDataSource<UnsignedInt16Member>> uint16s;
+		public List<MultiDimDataSource<SignedInt32Member>> int32s;
+		public List<MultiDimDataSource<UnsignedInt32Member>> uint32s;
+		public List<MultiDimDataSource<SignedInt64Member>> int64s;
+		public List<MultiDimDataSource<UnsignedInt64Member>> uint64s;
+		public List<MultiDimDataSource<Float32Member>> floats;
+		public List<MultiDimDataSource<Float64Member>> doubles;
 	}
 	
-	private Map<String,String> readStrings(NetcdfFile file) throws IOException {
+	/**
+	 * 
+	 * @param filename
+	 * @return
+	 * @throws IOException
+	 */
+	public static DataBundle loadData(String filename) throws IOException {
+		NetcdfFile file = NetcdfFiles.open(filename);
+		DataBundle bundle = new DataBundle();
+		bundle.chars = readStrings(file);
+		bundle.int1s = readBools(file);
+		bundle.int8s = readBytes(file);
+		bundle.uint8s = readUBytes(file);
+		bundle.int16s = readShorts(file);
+		bundle.uint16s = readUShorts(file);
+		bundle.int32s = readInts(file);
+		bundle.uint32s = readUInts(file);
+		bundle.int64s = readLongs(file);
+		bundle.uint64s = readULongs(file);
+		bundle.floats = readFloats(file);
+		bundle.doubles = readDoubles(file);
+		return bundle;
+	}
+
+	private static Map<String,String> readStrings(NetcdfFile file) throws IOException {
 		// Return all the "char" bands as metatdata
 		// Also (for now) try a simple attempt (might be broken) at returning "String" metadata
 		// notes about the unsupported types that weren't loaded like sequences or string or
@@ -116,7 +156,7 @@ public class Main
 		return strings;
 	}
 	
-	private <U extends Allocatable<U>>
+	private static <U extends Allocatable<U>>
 		List<MultiDimDataSource<U>> readValues(NetcdfFile file, String[] types, U val, Procedure3<Array,Integer,U> assignProc)
 	{
 		List<Info> bandGroups = bandInfo(file, types);
@@ -158,7 +198,7 @@ public class Main
 		return datasets;
 	}
 	
-	private List<MultiDimDataSource<UnsignedInt1Member>> readBools(NetcdfFile file) {
+	private static List<MultiDimDataSource<UnsignedInt1Member>> readBools(NetcdfFile file) {
 		Procedure3<Array, Integer, UnsignedInt1Member> assignProc =
 				new Procedure3<Array, Integer, UnsignedInt1Member>()
 		{
@@ -171,7 +211,7 @@ public class Main
 		return readValues(file, new String[] {"boolean"}, G.UINT1.construct(), assignProc);
 	}
 	
-	private List<MultiDimDataSource<SignedInt8Member>> readBytes(NetcdfFile file) {
+	private static List<MultiDimDataSource<SignedInt8Member>> readBytes(NetcdfFile file) {
 		Procedure3<Array, Integer, SignedInt8Member> assignProc =
 				new Procedure3<Array, Integer, SignedInt8Member>()
 		{
@@ -184,7 +224,7 @@ public class Main
 		return readValues(file, new String[] {"byte","enum1"}, G.INT8.construct(), assignProc);
 	}
 	
-	private List<MultiDimDataSource<UnsignedInt8Member>> readUBytes(NetcdfFile file) {
+	private static List<MultiDimDataSource<UnsignedInt8Member>> readUBytes(NetcdfFile file) {
 		Procedure3<Array, Integer, UnsignedInt8Member> assignProc =
 				new Procedure3<Array, Integer, UnsignedInt8Member>()
 		{
@@ -197,7 +237,7 @@ public class Main
 		return readValues(file, new String[] {"ubyte"}, G.UINT8.construct(), assignProc);
 	}
 	
-	private List<MultiDimDataSource<SignedInt16Member>> readShorts(NetcdfFile file) {
+	private static List<MultiDimDataSource<SignedInt16Member>> readShorts(NetcdfFile file) {
 		Procedure3<Array, Integer, SignedInt16Member> assignProc =
 				new Procedure3<Array, Integer, SignedInt16Member>()
 		{
@@ -210,7 +250,7 @@ public class Main
 		return readValues(file, new String[] {"short","enum2"}, G.INT16.construct(), assignProc);
 	}
 	
-	private List<MultiDimDataSource<UnsignedInt16Member>> readUShorts(NetcdfFile file) {
+	private static List<MultiDimDataSource<UnsignedInt16Member>> readUShorts(NetcdfFile file) {
 		Procedure3<Array, Integer, UnsignedInt16Member> assignProc =
 				new Procedure3<Array, Integer, UnsignedInt16Member>()
 		{
@@ -223,7 +263,7 @@ public class Main
 		return readValues(file, new String[] {"ushort"}, G.UINT16.construct(), assignProc);
 	}
 	
-	private List<MultiDimDataSource<SignedInt32Member>> readInts(NetcdfFile file) {
+	private static List<MultiDimDataSource<SignedInt32Member>> readInts(NetcdfFile file) {
 		Procedure3<Array, Integer, SignedInt32Member> assignProc =
 				new Procedure3<Array, Integer, SignedInt32Member>()
 		{
@@ -236,7 +276,7 @@ public class Main
 		return readValues(file, new String[] {"int","enum4"}, G.INT32.construct(), assignProc);
 	}
 	
-	private List<MultiDimDataSource<UnsignedInt32Member>> readUInts(NetcdfFile file) {
+	private static List<MultiDimDataSource<UnsignedInt32Member>> readUInts(NetcdfFile file) {
 		Procedure3<Array, Integer, UnsignedInt32Member> assignProc =
 				new Procedure3<Array, Integer, UnsignedInt32Member>()
 		{
@@ -249,7 +289,7 @@ public class Main
 		return readValues(file, new String[] {"uint"}, G.UINT32.construct(), assignProc);
 	}
 	
-	private List<MultiDimDataSource<SignedInt64Member>> readLongs(NetcdfFile file) {
+	private static List<MultiDimDataSource<SignedInt64Member>> readLongs(NetcdfFile file) {
 		Procedure3<Array, Integer, SignedInt64Member> assignProc =
 				new Procedure3<Array, Integer, SignedInt64Member>()
 		{
@@ -262,7 +302,7 @@ public class Main
 		return readValues(file, new String[] {"long"}, G.INT64.construct(), assignProc);
 	}
 	
-	private List<MultiDimDataSource<UnsignedInt64Member>> readULongs(NetcdfFile file) {
+	private static List<MultiDimDataSource<UnsignedInt64Member>> readULongs(NetcdfFile file) {
 		Procedure3<Array, Integer, UnsignedInt64Member> assignProc =
 				new Procedure3<Array, Integer, UnsignedInt64Member>()
 		{
@@ -275,7 +315,7 @@ public class Main
 		return readValues(file, new String[] {"ulong"}, G.UINT64.construct(), assignProc);
 	}
 	
-	private List<MultiDimDataSource<Float32Member>> readFloats(NetcdfFile file) {
+	private static List<MultiDimDataSource<Float32Member>> readFloats(NetcdfFile file) {
 		Procedure3<Array, Integer, Float32Member> assignProc =
 				new Procedure3<Array, Integer, Float32Member>()
 		{
@@ -288,7 +328,7 @@ public class Main
 		return readValues(file, new String[] {"float"}, G.FLT.construct(), assignProc);
 	}
 	
-	private List<MultiDimDataSource<Float64Member>> readDoubles(NetcdfFile file) {
+	private static List<MultiDimDataSource<Float64Member>> readDoubles(NetcdfFile file) {
 		Procedure3<Array, Integer, Float64Member> assignProc =
 				new Procedure3<Array, Integer, Float64Member>()
 		{
@@ -301,12 +341,12 @@ public class Main
 		return readValues(file, new String[] {"double"}, G.DBL.construct(), assignProc);
 	}
 
-	private class Info {
+	private static class Info {
 		long size = 0;
 		List<Integer> bandNums = new ArrayList<>();
 	}
 	
-	private boolean contains(String[] keys, String key) {
+	private static boolean contains(String[] keys, String key) {
 		for (String k : keys) {
 			if (key.equals(k))
 				return true;
@@ -314,7 +354,7 @@ public class Main
 		return false;
 	}
 	
-	private List<Info> bandInfo(NetcdfFile file, String[] types) {
+	private static List<Info> bandInfo(NetcdfFile file, String[] types) {
 		List<Info> infos = new ArrayList<>();
 		List<Variable> vars = file.getVariables();
 		for (int band = 0; band < vars.size(); band++) {
@@ -342,8 +382,9 @@ public class Main
 		return infos;
 	}
 	
-	private <U extends Allocatable<U>> MultiDimDataSource<U> makeDataset(Info info, NetcdfFile file, U type) {
-		
+	private static <U extends Allocatable<U>> MultiDimDataSource<U>
+		makeDataset(Info info, NetcdfFile file, U type)
+	{
 		// set the dims to the file's specified dims
 		
 		List<Dimension> dims = file.getDimensions();
@@ -417,174 +458,6 @@ public class Main
 			dimsStep5 = new long[] {1};
 
 		return MultiDimStorage.allocate(dimsStep5, type);
-	}
-	
-	public static void main(String[] args)
-	{
-		String filename = "/home/bdz/Downloads/modis.hdf";
-		NetcdfFile ncfile = null;
-		try {
-			ncfile = NetcdfFiles.open(filename);
-			List<Dimension> dims = ncfile.getDimensions();
-			System.out.println("file info: dims = "+dims.size());
-			for (int i = 0; i < dims.size(); i++) {
-				System.out.println("  "+dims.get(i).getLength());
-			}
-			List<Variable> bands = ncfile.getVariables();
-			System.out.println("band info: count = "+bands.size());
-			for (int i = 0; i < bands.size(); i++) {
-				Variable band = bands.get(i);
-				System.out.println("  band " + i);
-				System.out.println("    type " + band.getDataType());
-				System.out.println("    desc " + band.getDescription());
-				System.out.println("    loc  " + band.getDatasetLocation());
-				System.out.println("    dims " + band.getDimensionsString());
-				System.out.println("    rank " + band.getRank());
-				System.out.println("    shap " + Arrays.toString(band.getShape()));
-				System.out.println("    size " + band.getSize());
-				System.out.println("    unit " + band.getUnitsString());
-				if (band.getDataType().toString().equals("char")) {
-					Array arr = band.read();
-					for (int j = 0; j < band.getSize(); j++) {
-						if (j % 80 == 0)
-							System.out.println();
-						System.out.print(arr.getChar(j));
-					}
-					System.out.println();
-				}
-			}
-			Tuple12<
-			  Map<String,String>,
-			  List<MultiDimDataSource<UnsignedInt1Member>>,
-			  List<MultiDimDataSource<SignedInt8Member>>,
-			  List<MultiDimDataSource<UnsignedInt8Member>>,
-			  List<MultiDimDataSource<SignedInt16Member>>,
-			  List<MultiDimDataSource<UnsignedInt16Member>>,
-			  List<MultiDimDataSource<SignedInt32Member>>,
-			  List<MultiDimDataSource<UnsignedInt32Member>>,
-			  List<MultiDimDataSource<SignedInt64Member>>,
-			  List<MultiDimDataSource<UnsignedInt64Member>>,
-			  List<MultiDimDataSource<Float32Member>>,
-			  List<MultiDimDataSource<Float64Member>>>
-			data = new Main().loadDataSources(ncfile);
-			for (MultiDimDataSource<?> ds : data.b()) {
-				System.out.println("DS uint1");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
-			}
-			for (MultiDimDataSource<?> ds : data.c()) {
-				System.out.println("DS byte");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
-			}
-			for (MultiDimDataSource<?> ds : data.d()) {
-				System.out.println("DS ubyte");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
-			}
-			for (MultiDimDataSource<?> ds : data.e()) {
-				System.out.println("DS short");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
-			}
-			for (MultiDimDataSource<?> ds : data.f()) {
-				System.out.println("DS ushort");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
-			}
-			for (MultiDimDataSource<?> ds : data.g()) {
-				System.out.println("DS int");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
-			}
-			for (MultiDimDataSource<?> ds : data.h()) {
-				System.out.println("DS uint");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
-			}
-			for (MultiDimDataSource<?> ds : data.i()) {
-				System.out.println("DS long");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
-			}
-			for (MultiDimDataSource<?> ds : data.j()) {
-				System.out.println("DS ulong");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
-			}
-			for (MultiDimDataSource<?> ds : data.k()) {
-				System.out.println("DS float");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
-			}
-			for (MultiDimDataSource<?> ds : data.l()) {
-				System.out.println("DS double");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
-			}
-			for (String key : data.a().keySet()) {
-				System.out.println("CHARACTER DATA *******************************************");
-				System.out.println("  key  = " + key);
-				System.out.println("  text = " + data.a().get(key));
-			}
-		} catch (IOException e) {
-			System.out.println("error trying to open " + filename);
-		};
 	}
 	
 }
