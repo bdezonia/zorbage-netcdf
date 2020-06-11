@@ -49,9 +49,13 @@ public class Main
 	 * 
 	 * @param args
 	 */
-	public static void main(String[] args)
+	public void test(String[] args)
 	{
-		String filename = "/home/bdz/Downloads/modis.hdf";
+		if (args.length != 1) {
+			System.out.println("Usage: <appname> <netcdf input filename>");
+			System.exit(0);
+		}
+		String filename = args[0];
 		NetcdfFile ncfile = null;
 		try {
 			ncfile = NetcdfFiles.open(filename);
