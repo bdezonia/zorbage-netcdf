@@ -67,24 +67,6 @@ public class NetCDF {
 
 	/**
 	 * 
-	 */
-	public static class DataBundle {
-		public Map<String,String> chars;
-		public List<MultiDimDataSource<UnsignedInt1Member>> int1s;
-		public List<MultiDimDataSource<SignedInt8Member>> int8s;
-		public List<MultiDimDataSource<UnsignedInt8Member>> uint8s;
-		public List<MultiDimDataSource<SignedInt16Member>> int16s;
-		public List<MultiDimDataSource<UnsignedInt16Member>> uint16s;
-		public List<MultiDimDataSource<SignedInt32Member>> int32s;
-		public List<MultiDimDataSource<UnsignedInt32Member>> uint32s;
-		public List<MultiDimDataSource<SignedInt64Member>> int64s;
-		public List<MultiDimDataSource<UnsignedInt64Member>> uint64s;
-		public List<MultiDimDataSource<Float32Member>> floats;
-		public List<MultiDimDataSource<Float64Member>> doubles;
-	}
-	
-	/**
-	 * 
 	 * @param filename
 	 * @return
 	 * @throws IOException
