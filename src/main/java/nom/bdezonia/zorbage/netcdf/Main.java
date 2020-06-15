@@ -89,114 +89,37 @@ public class Main
 			}
 			DataBundle data = NetCDF.loadData(filename);
 			for (MultiDimDataSource<?> ds : data.int1s) {
-				System.out.println("DS uint1");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
+				dump(ds, "uint1");
 			}
 			for (MultiDimDataSource<?> ds : data.int8s) {
-				System.out.println("DS int8");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
+				dump(ds, "int8");
 			}
 			for (MultiDimDataSource<?> ds : data.uint8s) {
-				System.out.println("DS uint8");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
+				dump(ds, "uint8");
 			}
 			for (MultiDimDataSource<?> ds : data.int16s) {
-				System.out.println("DS int16");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
+				dump(ds, "int16");
 			}
 			for (MultiDimDataSource<?> ds : data.uint16s) {
-				System.out.println("DS uint16");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
+				dump(ds, "uint16");
 			}
 			for (MultiDimDataSource<?> ds : data.int32s) {
-				System.out.println("DS int32");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
+				dump(ds, "int32");
 			}
 			for (MultiDimDataSource<?> ds : data.uint32s) {
-				System.out.println("DS uint32");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
+				dump(ds, "uint32");
 			}
 			for (MultiDimDataSource<?> ds : data.int64s) {
-				System.out.println("DS int64");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
+				dump(ds, "int64");
 			}
 			for (MultiDimDataSource<?> ds : data.uint64s) {
-				System.out.println("DS uint64");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
+				dump(ds, "uint64");
 			}
 			for (MultiDimDataSource<?> ds : data.floats) {
-				System.out.println("DS float");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
+				dump(ds, "float");
 			}
 			for (MultiDimDataSource<?> ds : data.doubles) {
-				System.out.println("DS double");
-				System.out.print("  ");
-				for (int i = 0; i < ds.numDimensions(); i++) {
-					if (i != 0)
-						System.out.print(",");
-					System.out.print(ds.dimension(i));
-				}
-				System.out.println();
+				dump(ds, "double");
 			}
 			for (String key : data.chars.keySet()) {
 				System.out.println("CHARACTER DATA *******************************************");
@@ -206,6 +129,17 @@ public class Main
 		} catch (IOException e) {
 			System.out.println("error trying to open " + filename);
 		};
+	}
+	
+	private static void dump(MultiDimDataSource<?> ds, String type) {
+		System.out.println(type);
+		System.out.print("  dims = [");
+		for (int i = 0; i < ds.numDimensions(); i++) {
+			if (i != 0)
+				System.out.print(",");
+			System.out.print(ds.dimension(i));
+		}
+		System.out.println("]");
 	}
 	
 }
