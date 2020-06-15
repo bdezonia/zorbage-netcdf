@@ -48,13 +48,14 @@ public class Main
 	 * 
 	 * @param args
 	 */
-	public void test(String[] args)
+	public static void main(String[] args)
 	{
-		if (args.length != 1) {
-			System.out.println("Usage: <appname> <netcdf input filename>");
-			System.exit(0);
-		}
-		String filename = args[0];
+		//if (args.length != 1) {
+		//	System.out.println("Usage: <appname> <netcdf input filename>");
+		//	System.exit(0);
+		//}
+		//String filename = args[0];
+		String filename = "/home/bdz/images/qesdi/cru_v3_dtr_clim10.nc";
 		NetcdfFile ncfile = null;
 		try {
 			ncfile = NetcdfFiles.open(filename);
@@ -98,7 +99,7 @@ public class Main
 				System.out.println();
 			}
 			for (MultiDimDataSource<?> ds : data.int8s) {
-				System.out.println("DS byte");
+				System.out.println("DS int8");
 				System.out.print("  ");
 				for (int i = 0; i < ds.numDimensions(); i++) {
 					if (i != 0)
@@ -108,7 +109,7 @@ public class Main
 				System.out.println();
 			}
 			for (MultiDimDataSource<?> ds : data.uint8s) {
-				System.out.println("DS ubyte");
+				System.out.println("DS uint8");
 				System.out.print("  ");
 				for (int i = 0; i < ds.numDimensions(); i++) {
 					if (i != 0)
@@ -118,7 +119,7 @@ public class Main
 				System.out.println();
 			}
 			for (MultiDimDataSource<?> ds : data.int16s) {
-				System.out.println("DS short");
+				System.out.println("DS int16");
 				System.out.print("  ");
 				for (int i = 0; i < ds.numDimensions(); i++) {
 					if (i != 0)
@@ -128,7 +129,7 @@ public class Main
 				System.out.println();
 			}
 			for (MultiDimDataSource<?> ds : data.uint16s) {
-				System.out.println("DS ushort");
+				System.out.println("DS uint16");
 				System.out.print("  ");
 				for (int i = 0; i < ds.numDimensions(); i++) {
 					if (i != 0)
@@ -138,7 +139,7 @@ public class Main
 				System.out.println();
 			}
 			for (MultiDimDataSource<?> ds : data.int32s) {
-				System.out.println("DS int");
+				System.out.println("DS int32");
 				System.out.print("  ");
 				for (int i = 0; i < ds.numDimensions(); i++) {
 					if (i != 0)
@@ -148,7 +149,7 @@ public class Main
 				System.out.println();
 			}
 			for (MultiDimDataSource<?> ds : data.uint32s) {
-				System.out.println("DS uint");
+				System.out.println("DS uint32");
 				System.out.print("  ");
 				for (int i = 0; i < ds.numDimensions(); i++) {
 					if (i != 0)
@@ -158,7 +159,7 @@ public class Main
 				System.out.println();
 			}
 			for (MultiDimDataSource<?> ds : data.int64s) {
-				System.out.println("DS long");
+				System.out.println("DS int64");
 				System.out.print("  ");
 				for (int i = 0; i < ds.numDimensions(); i++) {
 					if (i != 0)
@@ -168,7 +169,7 @@ public class Main
 				System.out.println();
 			}
 			for (MultiDimDataSource<?> ds : data.uint64s) {
-				System.out.println("DS ulong");
+				System.out.println("DS uint64");
 				System.out.print("  ");
 				for (int i = 0; i < ds.numDimensions(); i++) {
 					if (i != 0)
