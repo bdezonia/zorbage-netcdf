@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import nom.bdezonia.zorbage.multidim.MultiDimDataSource;
+import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import ucar.ma2.Array;
 import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFile;
@@ -88,37 +88,37 @@ public class Main
 				}
 			}
 			DataBundle data = NetCDF.loadData(filename);
-			for (MultiDimDataSource<?> ds : data.int1s) {
+			for (DimensionedDataSource<?> ds : data.int1s) {
 				dump(ds, "uint1");
 			}
-			for (MultiDimDataSource<?> ds : data.int8s) {
+			for (DimensionedDataSource<?> ds : data.int8s) {
 				dump(ds, "int8");
 			}
-			for (MultiDimDataSource<?> ds : data.uint8s) {
+			for (DimensionedDataSource<?> ds : data.uint8s) {
 				dump(ds, "uint8");
 			}
-			for (MultiDimDataSource<?> ds : data.int16s) {
+			for (DimensionedDataSource<?> ds : data.int16s) {
 				dump(ds, "int16");
 			}
-			for (MultiDimDataSource<?> ds : data.uint16s) {
+			for (DimensionedDataSource<?> ds : data.uint16s) {
 				dump(ds, "uint16");
 			}
-			for (MultiDimDataSource<?> ds : data.int32s) {
+			for (DimensionedDataSource<?> ds : data.int32s) {
 				dump(ds, "int32");
 			}
-			for (MultiDimDataSource<?> ds : data.uint32s) {
+			for (DimensionedDataSource<?> ds : data.uint32s) {
 				dump(ds, "uint32");
 			}
-			for (MultiDimDataSource<?> ds : data.int64s) {
+			for (DimensionedDataSource<?> ds : data.int64s) {
 				dump(ds, "int64");
 			}
-			for (MultiDimDataSource<?> ds : data.uint64s) {
+			for (DimensionedDataSource<?> ds : data.uint64s) {
 				dump(ds, "uint64");
 			}
-			for (MultiDimDataSource<?> ds : data.floats) {
+			for (DimensionedDataSource<?> ds : data.floats) {
 				dump(ds, "float");
 			}
-			for (MultiDimDataSource<?> ds : data.doubles) {
+			for (DimensionedDataSource<?> ds : data.doubles) {
 				dump(ds, "double");
 			}
 			for (String key : data.chars.keySet()) {
@@ -131,8 +131,8 @@ public class Main
 		};
 	}
 	
-	private static void dump(MultiDimDataSource<?> ds, String type) {
-		System.out.println(type);
+	private static void dump(DimensionedDataSource<?> ds, String type) {
+		System.out.println("Dataset created of type " + type);
 		System.out.print("  dims = [");
 		for (int i = 0; i < ds.numDimensions(); i++) {
 			if (i != 0)

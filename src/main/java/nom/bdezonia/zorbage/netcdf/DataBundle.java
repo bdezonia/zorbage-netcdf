@@ -29,7 +29,7 @@ package nom.bdezonia.zorbage.netcdf;
 import java.util.List;
 import java.util.Map;
 
-import nom.bdezonia.zorbage.multidim.MultiDimDataSource;
+import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.type.float32.real.Float32Member;
 import nom.bdezonia.zorbage.type.float64.real.Float64Member;
 import nom.bdezonia.zorbage.type.int1.UnsignedInt1Member;
@@ -47,15 +47,15 @@ import nom.bdezonia.zorbage.type.int8.UnsignedInt8Member;
  */
 public class DataBundle {
 	public Map<String,String> chars;
-	public List<MultiDimDataSource<UnsignedInt1Member>> int1s;
-	public List<MultiDimDataSource<SignedInt8Member>> int8s;
-	public List<MultiDimDataSource<UnsignedInt8Member>> uint8s;
-	public List<MultiDimDataSource<SignedInt16Member>> int16s;
-	public List<MultiDimDataSource<UnsignedInt16Member>> uint16s;
-	public List<MultiDimDataSource<SignedInt32Member>> int32s;
-	public List<MultiDimDataSource<UnsignedInt32Member>> uint32s;
-	public List<MultiDimDataSource<SignedInt64Member>> int64s;
-	public List<MultiDimDataSource<UnsignedInt64Member>> uint64s;
-	public List<MultiDimDataSource<Float32Member>> floats;
-	public List<MultiDimDataSource<Float64Member>> doubles;
+	public List<DimensionedDataSource<UnsignedInt1Member>> int1s;
+	public List<DimensionedDataSource<SignedInt8Member>> int8s;
+	public List<DimensionedDataSource<UnsignedInt8Member>> uint8s;
+	public List<DimensionedDataSource<SignedInt16Member>> int16s;
+	public List<DimensionedDataSource<UnsignedInt16Member>> uint16s;
+	public List<DimensionedDataSource<SignedInt32Member>> int32s;
+	public List<DimensionedDataSource<UnsignedInt32Member>> uint32s;
+	public List<DimensionedDataSource<SignedInt64Member>> int64s;
+	public List<DimensionedDataSource<UnsignedInt64Member>> uint64s;
+	public List<DimensionedDataSource<Float32Member>> floats;
+	public List<DimensionedDataSource<Float64Member>> doubles;
 }

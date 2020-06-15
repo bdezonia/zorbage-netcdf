@@ -35,8 +35,8 @@ import java.util.Map;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.misc.LongUtils;
-import nom.bdezonia.zorbage.multidim.MultiDimDataSource;
-import nom.bdezonia.zorbage.multidim.MultiDimStorage;
+import nom.bdezonia.zorbage.data.DimensionedDataSource;
+import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.procedure.Procedure3;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.sampling.SamplingCartesianIntegerGrid;
@@ -139,12 +139,12 @@ public class NetCDF {
 	}
 	
 	private static <U extends Allocatable<U>>
-		List<MultiDimDataSource<U>> readValues(NetcdfFile file, String[] types, U val, Procedure3<Array,Integer,U> assignProc)
+		List<DimensionedDataSource<U>> readValues(NetcdfFile file, String[] types, U val, Procedure3<Array,Integer,U> assignProc)
 	{
 		List<Info> bandGroups = bandInfo(file, types);
-		List<MultiDimDataSource<U>> datasets = new ArrayList<>();
+		List<DimensionedDataSource<U>> datasets = new ArrayList<>();
 		for (Info info : bandGroups) {
-			MultiDimDataSource<U> ds = makeDataset(info, file, val);
+			DimensionedDataSource<U> ds = makeDataset(info, file, val);
 			for (int i = 0; i < info.bandNums.size(); i++) {
 				int band = info.bandNums.get(i);
 				Variable var = file.getVariables().get(band);
@@ -180,7 +180,7 @@ public class NetCDF {
 		return datasets;
 	}
 	
-	private static List<MultiDimDataSource<UnsignedInt1Member>> readBools(NetcdfFile file) {
+	private static List<DimensionedDataSource<UnsignedInt1Member>> readBools(NetcdfFile file) {
 		Procedure3<Array, Integer, UnsignedInt1Member> assignProc =
 				new Procedure3<Array, Integer, UnsignedInt1Member>()
 		{
@@ -193,7 +193,7 @@ public class NetCDF {
 		return readValues(file, new String[] {"boolean"}, G.UINT1.construct(), assignProc);
 	}
 	
-	private static List<MultiDimDataSource<SignedInt8Member>> readBytes(NetcdfFile file) {
+	private static List<DimensionedDataSource<SignedInt8Member>> readBytes(NetcdfFile file) {
 		Procedure3<Array, Integer, SignedInt8Member> assignProc =
 				new Procedure3<Array, Integer, SignedInt8Member>()
 		{
@@ -206,7 +206,7 @@ public class NetCDF {
 		return readValues(file, new String[] {"byte","enum1"}, G.INT8.construct(), assignProc);
 	}
 	
-	private static List<MultiDimDataSource<UnsignedInt8Member>> readUBytes(NetcdfFile file) {
+	private static List<DimensionedDataSource<UnsignedInt8Member>> readUBytes(NetcdfFile file) {
 		Procedure3<Array, Integer, UnsignedInt8Member> assignProc =
 				new Procedure3<Array, Integer, UnsignedInt8Member>()
 		{
@@ -219,7 +219,7 @@ public class NetCDF {
 		return readValues(file, new String[] {"ubyte"}, G.UINT8.construct(), assignProc);
 	}
 	
-	private static List<MultiDimDataSource<SignedInt16Member>> readShorts(NetcdfFile file) {
+	private static List<DimensionedDataSource<SignedInt16Member>> readShorts(NetcdfFile file) {
 		Procedure3<Array, Integer, SignedInt16Member> assignProc =
 				new Procedure3<Array, Integer, SignedInt16Member>()
 		{
@@ -232,7 +232,7 @@ public class NetCDF {
 		return readValues(file, new String[] {"short","enum2"}, G.INT16.construct(), assignProc);
 	}
 	
-	private static List<MultiDimDataSource<UnsignedInt16Member>> readUShorts(NetcdfFile file) {
+	private static List<DimensionedDataSource<UnsignedInt16Member>> readUShorts(NetcdfFile file) {
 		Procedure3<Array, Integer, UnsignedInt16Member> assignProc =
 				new Procedure3<Array, Integer, UnsignedInt16Member>()
 		{
@@ -245,7 +245,7 @@ public class NetCDF {
 		return readValues(file, new String[] {"ushort"}, G.UINT16.construct(), assignProc);
 	}
 	
-	private static List<MultiDimDataSource<SignedInt32Member>> readInts(NetcdfFile file) {
+	private static List<DimensionedDataSource<SignedInt32Member>> readInts(NetcdfFile file) {
 		Procedure3<Array, Integer, SignedInt32Member> assignProc =
 				new Procedure3<Array, Integer, SignedInt32Member>()
 		{
@@ -258,7 +258,7 @@ public class NetCDF {
 		return readValues(file, new String[] {"int","enum4"}, G.INT32.construct(), assignProc);
 	}
 	
-	private static List<MultiDimDataSource<UnsignedInt32Member>> readUInts(NetcdfFile file) {
+	private static List<DimensionedDataSource<UnsignedInt32Member>> readUInts(NetcdfFile file) {
 		Procedure3<Array, Integer, UnsignedInt32Member> assignProc =
 				new Procedure3<Array, Integer, UnsignedInt32Member>()
 		{
@@ -271,7 +271,7 @@ public class NetCDF {
 		return readValues(file, new String[] {"uint"}, G.UINT32.construct(), assignProc);
 	}
 	
-	private static List<MultiDimDataSource<SignedInt64Member>> readLongs(NetcdfFile file) {
+	private static List<DimensionedDataSource<SignedInt64Member>> readLongs(NetcdfFile file) {
 		Procedure3<Array, Integer, SignedInt64Member> assignProc =
 				new Procedure3<Array, Integer, SignedInt64Member>()
 		{
@@ -284,7 +284,7 @@ public class NetCDF {
 		return readValues(file, new String[] {"long"}, G.INT64.construct(), assignProc);
 	}
 	
-	private static List<MultiDimDataSource<UnsignedInt64Member>> readULongs(NetcdfFile file) {
+	private static List<DimensionedDataSource<UnsignedInt64Member>> readULongs(NetcdfFile file) {
 		Procedure3<Array, Integer, UnsignedInt64Member> assignProc =
 				new Procedure3<Array, Integer, UnsignedInt64Member>()
 		{
@@ -297,7 +297,7 @@ public class NetCDF {
 		return readValues(file, new String[] {"ulong"}, G.UINT64.construct(), assignProc);
 	}
 	
-	private static List<MultiDimDataSource<Float32Member>> readFloats(NetcdfFile file) {
+	private static List<DimensionedDataSource<Float32Member>> readFloats(NetcdfFile file) {
 		Procedure3<Array, Integer, Float32Member> assignProc =
 				new Procedure3<Array, Integer, Float32Member>()
 		{
@@ -310,7 +310,7 @@ public class NetCDF {
 		return readValues(file, new String[] {"float"}, G.FLT.construct(), assignProc);
 	}
 	
-	private static List<MultiDimDataSource<Float64Member>> readDoubles(NetcdfFile file) {
+	private static List<DimensionedDataSource<Float64Member>> readDoubles(NetcdfFile file) {
 		Procedure3<Array, Integer, Float64Member> assignProc =
 				new Procedure3<Array, Integer, Float64Member>()
 		{
@@ -364,7 +364,7 @@ public class NetCDF {
 		return infos;
 	}
 	
-	private static <U extends Allocatable<U>> MultiDimDataSource<U>
+	private static <U extends Allocatable<U>> DimensionedDataSource<U>
 		makeDataset(Info info, NetcdfFile file, U type)
 	{
 		// set the dims to the file's specified dims
@@ -439,7 +439,7 @@ public class NetCDF {
 		if (dimsStep5.length == 0)
 			dimsStep5 = new long[] {1};
 
-		return MultiDimStorage.allocate(dimsStep5, type);
+		return DimensionedStorage.allocate(dimsStep5, type);
 	}
 	
 }
