@@ -28,6 +28,7 @@ package nom.bdezonia.zorbage.netcdf;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -148,6 +149,12 @@ public class NetCDF {
 			for (int i = 0; i < info.bandNums.size(); i++) {
 				int band = info.bandNums.get(i);
 				Variable var = file.getVariables().get(band);
+				ds.metadata().put("band-"+i+"-location", var.getDatasetLocation());
+				ds.metadata().put("band-"+i+"-description", var.getDescription());
+				ds.metadata().put("band-"+i+"-dimensions", var.getDimensionsString());
+				ds.metadata().put("band-"+i+"-file-type-id", var.getFileTypeId());
+				ds.metadata().put("band-"+i+"-name-and-dimensions", var.getNameAndDimensions());
+				ds.metadata().put("band-"+i+"-units", var.getUnitsString());
 				Array arr = null;
 				try {
 					arr = var.read();
@@ -439,6 +446,8 @@ public class NetCDF {
 		if (dimsStep5.length == 0)
 			dimsStep5 = new long[] {1};
 
+		System.out.println("making a dataset of dims "+Arrays.toString(dimsStep5));
+		
 		return DimensionedStorage.allocate(dimsStep5, type);
 	}
 	

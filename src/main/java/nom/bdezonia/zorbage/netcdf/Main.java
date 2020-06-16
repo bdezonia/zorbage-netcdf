@@ -55,7 +55,8 @@ public class Main
 		//	System.exit(0);
 		//}
 		//String filename = args[0];
-		String filename = "/home/bdz/images/qesdi/cru_v3_dtr_clim10.nc";
+		//String filename = "/home/bdz/images/qesdi/cru_v3_dtr_clim10.nc";
+		String filename = "/home/bdz/images/qesdi/wwf_olson2006_ecosystems.nc";
 		NetcdfFile ncfile = null;
 		try {
 			ncfile = NetcdfFiles.open(filename);
