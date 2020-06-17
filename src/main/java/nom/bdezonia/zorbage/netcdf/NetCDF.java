@@ -28,7 +28,6 @@ package nom.bdezonia.zorbage.netcdf;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -446,8 +445,6 @@ public class NetCDF {
 		if (dimsStep5.length == 0)
 			dimsStep5 = new long[] {1};
 
-		System.out.println("making a dataset of dims "+Arrays.toString(dimsStep5));
-		
 		return DimensionedStorage.allocate(dimsStep5, type);
 	}
 	
