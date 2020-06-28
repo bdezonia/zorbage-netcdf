@@ -145,6 +145,8 @@ public class NetCDF {
 		List<DimensionedDataSource<U>> datasets = new ArrayList<>();
 		for (Info info : bandGroups) {
 			DimensionedDataSource<U> ds = makeDataset(info, file, val);
+			ds.setName(file.getTitle());
+			ds.setSource(file.getLocation());
 			for (int i = 0; i < info.bandNums.size(); i++) {
 				int band = info.bandNums.get(i);
 				Variable var = file.getVariables().get(band);
