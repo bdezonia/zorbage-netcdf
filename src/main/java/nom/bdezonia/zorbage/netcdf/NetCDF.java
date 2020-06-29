@@ -1,5 +1,5 @@
 /*
- * zorbage-netcdf: code for loading netcdf files into zorbage data structures for further processing
+ * zorbage-netcdf: code for using the NetCDF data file library to open files into zorbage data structures for further processing
  *
  * Copyright (C) 2020 Barry DeZonia
  * 
