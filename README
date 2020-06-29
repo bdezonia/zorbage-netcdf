@@ -3,3 +3,7 @@ zorbage-netcdf: code for using the NetCDF data file library to open files into z
 To learn more about Zorbage please visit https://github.com/bdezonia/zorbage
 
 To learn more about NetCDF please visit https://www.unidata.ucar.edu/software/netcdf
+
+Code example to open all data associated with a data file:
+
+  DataBundle results = NetCDF.open("sunset.jpg");
