@@ -7,3 +7,20 @@ To learn more about NetCDF please visit https://www.unidata.ucar.edu/software/ne
 Code example to open all data associated with a data file:
 
   DataBundle results = NetCDF.open("sunset.jpg");
+
+How to include zorbage-netcdf in your Maven project
+
+  Add the following dependency to your project's pom.xml:
+  
+  <dependency>
+    <groupId>io.github.bdezonia</groupId>
+    <artifactId>zorbage-netcdf</artifactId>
+    <version>0.0.1</version>
+  </dependency>
+  
+How to include zorbage-netcdf in a different build system
+
+  See https://search.maven.org/artifact/io.github.bdezonia/zorbage-netcdf/0.0.1/jar
+  for instructions on how to reference zorbage-netcdf in build systems such as
+  Gradle or others.
+
