@@ -48,7 +48,7 @@ public class Main
 	 * 
 	 * @param args
 	 */
-	static void test()
+	/* public */ static void main(String[] args)
 	{
 		//if (args.length != 1) {
 		//	System.out.println("Usage: <appname> <netcdf input filename>");

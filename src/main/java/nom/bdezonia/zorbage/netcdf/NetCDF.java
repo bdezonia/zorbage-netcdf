@@ -34,12 +34,12 @@ import java.util.Map;
 
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.G;
+import nom.bdezonia.zorbage.algorithm.GridIterator;
 import nom.bdezonia.zorbage.misc.LongUtils;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.procedure.Procedure3;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
-import nom.bdezonia.zorbage.sampling.SamplingCartesianIntegerGrid;
 import nom.bdezonia.zorbage.sampling.SamplingIterator;
 import nom.bdezonia.zorbage.type.float32.real.Float32Member;
 import nom.bdezonia.zorbage.type.float64.real.Float64Member;
@@ -172,9 +172,7 @@ public class NetCDF {
 					minPt[0] = i;
 					maxPt[0] = i;
 				}
-				SamplingCartesianIntegerGrid grid =
-						new SamplingCartesianIntegerGrid(minPt, maxPt);
-				SamplingIterator<IntegerIndex> iter = grid.iterator();
+				SamplingIterator<IntegerIndex> iter = GridIterator.compute(minPt, maxPt);
 				IntegerIndex index = new IntegerIndex(ds.numDimensions());
 				int p = 0;
 				while (iter.hasNext()) {
