@@ -71,21 +71,25 @@ public class NetCDF {
 	 * @return
 	 * @throws IOException
 	 */
-	public static DataBundle loadData(String filename) throws IOException {
-		NetcdfFile file = NetcdfFiles.open(filename);
+	public static DataBundle loadAllDatasets(String filename) {
 		DataBundle bundle = new DataBundle();
-		bundle.chars = readStrings(file);
-		bundle.int1s = readBools(file);
-		bundle.int8s = readBytes(file);
-		bundle.uint8s = readUBytes(file);
-		bundle.int16s = readShorts(file);
-		bundle.uint16s = readUShorts(file);
-		bundle.int32s = readInts(file);
-		bundle.uint32s = readUInts(file);
-		bundle.int64s = readLongs(file);
-		bundle.uint64s = readULongs(file);
-		bundle.floats = readFloats(file);
-		bundle.doubles = readDoubles(file);
+		try {
+			NetcdfFile file = NetcdfFiles.open(filename);
+			bundle.chars = readStrings(file);
+			bundle.int1s = readBools(file);
+			bundle.int8s = readBytes(file);
+			bundle.uint8s = readUBytes(file);
+			bundle.int16s = readShorts(file);
+			bundle.uint16s = readUShorts(file);
+			bundle.int32s = readInts(file);
+			bundle.uint32s = readUInts(file);
+			bundle.int64s = readLongs(file);
+			bundle.uint64s = readULongs(file);
+			bundle.floats = readFloats(file);
+			bundle.doubles = readDoubles(file);
+		} catch (IOException e) {
+			System.out.println("Exception occured : " + e);
+		}
 		return bundle;
 	}
 
@@ -131,7 +135,7 @@ public class NetCDF {
 			}
 			else
 			{
-				// note that some types might be newer than the netcdf code wae are using supports
+				// note that some types might be newer than the netcdf code we are using supports
 				strings.put(name, "Unknown data set of type " + dataType + " ignored");
 			}
 		}
