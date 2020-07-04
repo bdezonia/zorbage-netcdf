@@ -76,7 +76,7 @@ public class NetCDF {
 		try {
 			NetcdfFile file = NetcdfFiles.open(filename);
 			bundle.chars = readStrings(file);
-			bundle.int1s = readBools(file);
+			bundle.uint1s = readBools(file);
 			bundle.int8s = readBytes(file);
 			bundle.uint8s = readUBytes(file);
 			bundle.int16s = readShorts(file);
@@ -180,8 +180,8 @@ public class NetCDF {
 				IntegerIndex index = new IntegerIndex(ds.numDimensions());
 				int p = 0;
 				while (iter.hasNext()) {
-					assignProc.call(arr, p++, val);
 					iter.next(index);
+					assignProc.call(arr, p++, val);
 					ds.set(index, val);
 				}
 			}

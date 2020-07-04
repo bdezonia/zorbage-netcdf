@@ -47,7 +47,7 @@ import nom.bdezonia.zorbage.type.int8.UnsignedInt8Member;
  */
 public class DataBundle {
 	public Map<String,String> chars;
-	public List<DimensionedDataSource<UnsignedInt1Member>> int1s;
+	public List<DimensionedDataSource<UnsignedInt1Member>> uint1s;
 	public List<DimensionedDataSource<SignedInt8Member>> int8s;
 	public List<DimensionedDataSource<UnsignedInt8Member>> uint8s;
 	public List<DimensionedDataSource<SignedInt16Member>> int16s;
