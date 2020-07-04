@@ -179,10 +179,15 @@ public class NetCDF {
 				SamplingIterator<IntegerIndex> iter = GridIterator.compute(minPt, maxPt);
 				IntegerIndex index = new IntegerIndex(ds.numDimensions());
 				int p = 0;
-				while (iter.hasNext()) {
-					iter.next(index);
-					assignProc.call(arr, p++, val);
-					ds.set(index, val);
+				long xBound = (maxPt[0] + 1);
+				long yBound = (maxPt.length < 2) ? 1 : (maxPt[1] + 1);
+				for (long y = 0; y < yBound; y++) {
+					for (long x = 0; x < xBound; x++) {
+						iter.next(index);
+						p = (int) ((yBound - 1 - y) * (xBound) + x);
+						assignProc.call(arr, p++, val);
+						ds.set(index, val);
+					}
 				}
 			}
 			datasets.add(ds);
