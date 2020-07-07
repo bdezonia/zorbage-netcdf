@@ -28,13 +28,12 @@ package nom.bdezonia.zorbage.netcdf;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algorithm.GridIterator;
+import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.misc.LongUtils;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
@@ -75,7 +74,6 @@ public class NetCDF {
 		DataBundle bundle = new DataBundle();
 		try {
 			NetcdfFile file = NetcdfFiles.open(filename);
-			bundle.chars = readStrings(file);
 			bundle.uint1s = readBools(file);
 			bundle.int8s = readBytes(file);
 			bundle.uint8s = readUBytes(file);
@@ -85,13 +83,17 @@ public class NetCDF {
 			bundle.uint32s = readUInts(file);
 			bundle.int64s = readLongs(file);
 			bundle.uint64s = readULongs(file);
-			bundle.floats = readFloats(file);
-			bundle.doubles = readDoubles(file);
+			bundle.flt32s = readFloats(file);
+			bundle.flt64s = readDoubles(file);
+			// TODO: enable me
+			//bundle.fstrs = readStrings(file);
 		} catch (IOException e) {
 			System.out.println("Exception occured : " + e);
 		}
 		return bundle;
 	}
+
+	/*
 
 	private static Map<String,String> readStrings(NetcdfFile file) throws IOException {
 		// Return all the "char" bands as metatdata
@@ -142,6 +144,8 @@ public class NetCDF {
 		return strings;
 	}
 	
+	*/
+
 	private static <U extends Allocatable<U>>
 		List<DimensionedDataSource<U>> readValues(NetcdfFile file, String[] types, U val, Procedure3<Array,Integer,U> assignProc)
 	{

@@ -27,6 +27,8 @@
 package nom.bdezonia.zorbage.netcdf;
 
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
+//import nom.bdezonia.zorbage.misc.
+import nom.bdezonia.zorbage.misc.DataBundle;
 
 /**
  * 
@@ -76,17 +78,19 @@ public class Main
 		for (DimensionedDataSource<?> ds : data.uint64s) {
 			dump(ds, "uint64");
 		}
-		for (DimensionedDataSource<?> ds : data.floats) {
+		for (DimensionedDataSource<?> ds : data.flt32s) {
 			dump(ds, "float");
 		}
-		for (DimensionedDataSource<?> ds : data.doubles) {
+		for (DimensionedDataSource<?> ds : data.flt64s) {
 			dump(ds, "double");
 		}
+		/*
 		for (String key : data.chars.keySet()) {
 			System.out.println("CHARACTER DATA *******************************************");
 			System.out.println("  key  = " + key);
 			System.out.println("  text = " + data.chars.get(key));
 		}
+		*/
 	}
 	
 	private static void dump(DimensionedDataSource<?> ds, String type) {
