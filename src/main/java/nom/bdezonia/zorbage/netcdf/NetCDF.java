@@ -40,6 +40,7 @@ import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.procedure.Procedure3;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.sampling.SamplingIterator;
+import nom.bdezonia.zorbage.type.character.FixedStringMember;
 import nom.bdezonia.zorbage.type.float32.real.Float32Member;
 import nom.bdezonia.zorbage.type.float64.real.Float64Member;
 import nom.bdezonia.zorbage.type.int1.UnsignedInt1Member;
@@ -85,22 +86,19 @@ public class NetCDF {
 			bundle.uint64s = readULongs(file);
 			bundle.flts = readFloats(file);
 			bundle.dbls = readDoubles(file);
-			// TODO: enable me
-			//bundle.fstrs = readStrings(file);
+			bundle.fstrs = readStrings(file);
 		} catch (IOException e) {
 			System.out.println("Exception occured : " + e);
 		}
 		return bundle;
 	}
 
-	/*
-
-	private static Map<String,String> readStrings(NetcdfFile file) throws IOException {
+	private static List<DimensionedDataSource<FixedStringMember>> readStrings(NetcdfFile file) throws IOException {
 		// Return all the "char" bands as metatdata
 		// Also (for now) try a simple attempt (might be broken) at returning "String" metadata
 		// notes about the unsupported types that weren't loaded like sequences or string or
 		// structure or opaque or object??
-		Map<String,String> strings = new HashMap<>();
+		List<DimensionedDataSource<FixedStringMember>> datasets = new ArrayList<>();
 		List<Variable> vars = file.getVariables();
 		for (Variable var : vars) {
 			String dataType = var.getDataType().toString();
@@ -108,7 +106,11 @@ public class NetCDF {
 			if (dataType.equals("char") || dataType.equals("String"))
 			{
 				String str = var.read().toString();
-				strings.put(name, str);
+				FixedStringMember value = new FixedStringMember(str.length());
+				DimensionedDataSource<FixedStringMember> ds = DimensionedStorage.allocate(new long[] {1}, value);
+				value.setV(str);
+				ds.rawData().set(0, value);
+				datasets.add(ds);
 			}
 			else if (dataType.equals("boolean") ||
 					dataType.equals("byte") ||
@@ -133,19 +135,27 @@ public class NetCDF {
 						dataType.equals("object"))
 			{
 				// note that some types our reader can't load yet
-				strings.put(name, "Unsupported data set of type " + dataType + " not loaded");
+				String str = name + ": Unsupported data set of type " + dataType + ": not loaded";
+				FixedStringMember value = new FixedStringMember(str.length());
+				DimensionedDataSource<FixedStringMember> ds = DimensionedStorage.allocate(new long[] {1}, value);
+				value.setV(str);
+				ds.rawData().set(0, value);
+				datasets.add(ds);
 			}
 			else
 			{
 				// note that some types might be newer than the netcdf code we are using supports
-				strings.put(name, "Unknown data set of type " + dataType + " ignored");
+				String str = name + ": unknown data set of type " + dataType + ": ignored";
+				FixedStringMember value = new FixedStringMember(str.length());
+				DimensionedDataSource<FixedStringMember> ds = DimensionedStorage.allocate(new long[] {1}, value);
+				value.setV(str);
+				ds.rawData().set(0, value);
+				datasets.add(ds);
 			}
 		}
-		return strings;
+		return datasets;
 	}
 	
-	*/
-
 	private static <U extends Allocatable<U>>
 		List<DimensionedDataSource<U>> readValues(NetcdfFile file, String[] types, U val, Procedure3<Array,Integer,U> assignProc)
 	{
