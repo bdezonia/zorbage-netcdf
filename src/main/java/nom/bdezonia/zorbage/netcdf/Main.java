@@ -78,10 +78,10 @@ public class Main
 		for (DimensionedDataSource<?> ds : data.uint64s) {
 			dump(ds, "uint64");
 		}
-		for (DimensionedDataSource<?> ds : data.flt32s) {
+		for (DimensionedDataSource<?> ds : data.flts) {
 			dump(ds, "float");
 		}
-		for (DimensionedDataSource<?> ds : data.flt64s) {
+		for (DimensionedDataSource<?> ds : data.dbls) {
 			dump(ds, "double");
 		}
 		/*

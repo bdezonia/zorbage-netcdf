@@ -83,8 +83,8 @@ public class NetCDF {
 			bundle.uint32s = readUInts(file);
 			bundle.int64s = readLongs(file);
 			bundle.uint64s = readULongs(file);
-			bundle.flt32s = readFloats(file);
-			bundle.flt64s = readDoubles(file);
+			bundle.flts = readFloats(file);
+			bundle.dbls = readDoubles(file);
 			// TODO: enable me
 			//bundle.fstrs = readStrings(file);
 		} catch (IOException e) {
