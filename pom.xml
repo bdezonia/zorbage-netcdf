@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.bdezonia</groupId>
   <artifactId>zorbage-netcdf</artifactId>
-  <version>0.0.2</version>
+  <version>0.0.3-SNAPSHOT</version>
   <name>zorbage-netcdf</name>
   <description>zorbage-netcdf: code for loading netcdf files into zorbage data structures for further processing</description>
   <url>https://github.com/bdezonia/zorbage-netcdf</url>
