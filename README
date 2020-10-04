@@ -1,4 +1,4 @@
-zorbage-netcdf: code for using the NetCDF data file library to open files into zorbage data structures for further processing
+zorbage-netcdf: code for using the NetCDF data file loading library to populate data into zorbage structures for further processing
 
 To learn more about Zorbage please visit https://github.com/bdezonia/zorbage
 
@@ -15,12 +15,12 @@ How to include zorbage-netcdf in your Maven project
   <dependency>
     <groupId>io.github.bdezonia</groupId>
     <artifactId>zorbage-netcdf</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.4</version>
   </dependency>
   
 How to include zorbage-netcdf in a different build system
 
-  See https://search.maven.org/artifact/io.github.bdezonia/zorbage-netcdf/0.0.2/jar
+  See https://search.maven.org/artifact/io.github.bdezonia/zorbage-netcdf/0.0.4/jar
   for instructions on how to reference zorbage-netcdf in build systems such as
   Gradle or others.
 
