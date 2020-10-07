@@ -107,7 +107,7 @@ public class NetCDF {
 			{
 				String str = var.read().toString();
 				FixedStringMember value = new FixedStringMember(str);
-				DimensionedDataSource<FixedStringMember> ds = DimensionedStorage.allocate(new long[] {1}, value);
+				DimensionedDataSource<FixedStringMember> ds = DimensionedStorage.allocate(value, new long[] {1});
 				ds.rawData().set(0, value);
 				datasets.add(ds);
 			}
@@ -136,7 +136,7 @@ public class NetCDF {
 				// note that some types our reader can't load yet
 				String str = name + ": Unsupported data set of type " + dataType + ": not loaded";
 				FixedStringMember value = new FixedStringMember(str);
-				DimensionedDataSource<FixedStringMember> ds = DimensionedStorage.allocate(new long[] {1}, value);
+				DimensionedDataSource<FixedStringMember> ds = DimensionedStorage.allocate(value, new long[] {1});
 				ds.rawData().set(0, value);
 				datasets.add(ds);
 			}
@@ -145,7 +145,7 @@ public class NetCDF {
 				// note that some types might be newer than the netcdf code we are using supports
 				String str = name + ": unknown data set of type " + dataType + ": ignored";
 				FixedStringMember value = new FixedStringMember(str);
-				DimensionedDataSource<FixedStringMember> ds = DimensionedStorage.allocate(new long[] {1}, value);
+				DimensionedDataSource<FixedStringMember> ds = DimensionedStorage.allocate(value, new long[] {1});
 				ds.rawData().set(0, value);
 				datasets.add(ds);
 			}
@@ -465,7 +465,7 @@ public class NetCDF {
 		if (dimsStep5.length == 0)
 			dimsStep5 = new long[] {1};
 
-		return DimensionedStorage.allocate(dimsStep5, type);
+		return DimensionedStorage.allocate(type, dimsStep5);
 	}
 	
 }
