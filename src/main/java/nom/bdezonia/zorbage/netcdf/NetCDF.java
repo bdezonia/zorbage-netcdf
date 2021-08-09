@@ -162,12 +162,12 @@ public class NetCDF {
 			for (int i = 0; i < info.bandNums.size(); i++) {
 				int band = info.bandNums.get(i);
 				Variable var = file.getVariables().get(band);
-				ds.metadata().put("band-"+i+"-location", var.getDatasetLocation());
-				ds.metadata().put("band-"+i+"-description", var.getDescription());
-				ds.metadata().put("band-"+i+"-dimensions", var.getDimensionsString());
-				ds.metadata().put("band-"+i+"-file-type-id", var.getFileTypeId());
-				ds.metadata().put("band-"+i+"-name-and-dimensions", var.getNameAndDimensions());
-				ds.metadata().put("band-"+i+"-units", var.getUnitsString());
+				ds.metadata().putString("band-"+i+"-location", var.getDatasetLocation());
+				ds.metadata().putString("band-"+i+"-description", var.getDescription());
+				ds.metadata().putString("band-"+i+"-dimensions", var.getDimensionsString());
+				ds.metadata().putString("band-"+i+"-file-type-id", var.getFileTypeId());
+				ds.metadata().putString("band-"+i+"-name-and-dimensions", var.getNameAndDimensions());
+				ds.metadata().putString("band-"+i+"-units", var.getUnitsString());
 				Array arr = null;
 				try {
 					arr = var.read();
