@@ -34,6 +34,7 @@ import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.misc.LongUtils;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
+import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.procedure.Procedure3;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.sampling.SamplingIterator;
@@ -54,6 +55,7 @@ import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFile;
 import ucar.nc2.NetcdfFiles;
 import ucar.nc2.Variable;
+import ucar.nc2.ft2.coverage.remote.CdmrFeatureProto.CoordSysOrBuilder;
 
 /**
  * 
@@ -159,6 +161,7 @@ public class NetCDF {
 			DimensionedDataSource<U> ds = makeDataset(info, file, val);
 			ds.setName(file.getTitle());
 			ds.setSource(file.getLocation());
+			PlaneView<U> planes = new PlaneView<>(ds, 0, 1);
 			for (int i = 0; i < info.bandNums.size(); i++) {
 				int band = info.bandNums.get(i);
 				Variable var = file.getVariables().get(band);
@@ -174,27 +177,61 @@ public class NetCDF {
 				} catch (IOException e) {
 					throw new IllegalArgumentException("could not read data array for band number "+band);
 				}
-				long[] minPt = new long[ds.numDimensions()];
-				long[] maxPt = new long[ds.numDimensions()];
-				for (int d = 0; d < ds.numDimensions(); d++) {
-					maxPt[d] = ds.dimension(d) - 1;
+
+				int numPlaneDims = ds.numDimensions() - 2;
+				if (numPlaneDims < 0) numPlaneDims = 0;
+				
+				if (numPlaneDims == 0) {
+					// now iterate the plane of pixels and fill it
+					long p;
+					for (long y = 0; y < planes.d1(); y++) {
+						for (long x = 0; x < planes.d0(); x++) {
+							p = ((planes.d1() - 1 - y) * (planes.d0()) + x);
+							if (p >= Integer.MAX_VALUE)
+								throw new IllegalArgumentException("netcdf dims are larger than expected");
+							assignProc.call(arr, (int) p, val);
+							planes.set(x, y, val);
+						}
+					}
 				}
-				// set the plane to the one band we are reading (only if ds data is multichannel)
-				if (info.bandNums.size() != 1) {
-					minPt[0] = i;
-					maxPt[0] = i;
-				}
-				SamplingIterator<IntegerIndex> iter = GridIterator.compute(minPt, maxPt);
-				IntegerIndex index = new IntegerIndex(ds.numDimensions());
-				int p = 0;
-				long xBound = (maxPt[0] + 1);
-				long yBound = (maxPt.length < 2) ? 1 : (maxPt[1] + 1);
-				for (long y = 0; y < yBound; y++) {
-					for (long x = 0; x < xBound; x++) {
-						iter.next(index);
-						p = (int) ((yBound - 1 - y) * (xBound) + x);
-						assignProc.call(arr, p++, val);
-						ds.set(index, val);
+				else {
+					
+					long[] planeDims = new long[numPlaneDims];
+					for (int d = 2; d < ds.numDimensions(); d++) {
+						int p = d - 2;
+						planeDims[p] = ds.dimension(d);
+					}
+
+					SamplingIterator<IntegerIndex> iter = GridIterator.compute(planeDims);
+					
+					IntegerIndex planeIdx = new IntegerIndex(planeDims.length);
+
+					// iterate a plane at a time
+
+					long bandOffset = 0;
+					while (iter.hasNext()) {
+						
+						// find the next plane 
+						iter.next(planeIdx);
+					
+						// set our plane's position based upon this index
+						for (int d = 0; d < planeDims.length; d++) {
+							planes.setPositionValue(d, planeIdx.get(d));
+						}
+
+						// now iterate the plane of pixels and fill it
+						long p = 0;
+						for (long y = 0; y < planes.d1(); y++) {
+							for (long x = 0; x < planes.d0(); x++) {
+								p = ((planes.d1() - 1 - y) * (planes.d0()) + x);
+								if (p >= Integer.MAX_VALUE)
+									throw new IllegalArgumentException("netcdf dims are larger than expected");
+								assignProc.call(arr, (int) (bandOffset + p), val);
+								planes.set(x, y, val);
+							}
+						}
+						
+						bandOffset += (planes.d0() * planes.d1()); 
 					}
 				}
 			}
@@ -464,5 +501,5 @@ public class NetCDF {
 
 		return DimensionedStorage.allocate(type, dimsStep5);
 	}
-	
+
 }
