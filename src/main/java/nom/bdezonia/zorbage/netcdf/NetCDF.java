@@ -55,7 +55,6 @@ import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFile;
 import ucar.nc2.NetcdfFiles;
 import ucar.nc2.Variable;
-import ucar.nc2.ft2.coverage.remote.CdmrFeatureProto.CoordSysOrBuilder;
 
 /**
  * 
@@ -183,13 +182,14 @@ public class NetCDF {
 				
 				if (numPlaneDims == 0) {
 					// now iterate the plane of pixels and fill it
-					long p;
 					for (long y = 0; y < planes.d1(); y++) {
+						long transformedY = planes.d1() - 1 - y;
 						for (long x = 0; x < planes.d0(); x++) {
-							p = ((planes.d1() - 1 - y) * (planes.d0()) + x);
+							long transformedX = x;
+							long p = (planes.d0() * transformedY) + transformedX;
 							if (p >= Integer.MAX_VALUE)
-								throw new IllegalArgumentException("netcdf dims are larger than expected");
-							assignProc.call(arr, (int) p, val);
+								throw new IllegalArgumentException("netcdf dims are larger than expected : 1");
+							assignProc.call(arr, (int) (p), val);
 							planes.set(x, y, val);
 						}
 					}
@@ -222,10 +222,14 @@ public class NetCDF {
 						// now iterate the plane of pixels and fill it
 						long p = 0;
 						for (long y = 0; y < planes.d1(); y++) {
+							long transformedY = planes.d1() - 1 - y;
 							for (long x = 0; x < planes.d0(); x++) {
-								p = ((planes.d1() - 1 - y) * (planes.d0()) + x);
+								long transformedX = x;
+								p = (planes.d0() * transformedY) + transformedX;
 								if (p >= Integer.MAX_VALUE)
-									throw new IllegalArgumentException("netcdf dims are larger than expected");
+									throw new IllegalArgumentException("netcdf dims are larger than expected : 1");
+								if (bandOffset + p >= Integer.MAX_VALUE)
+									throw new IllegalArgumentException("netcdf dims are larger than expected : 2");
 								assignProc.call(arr, (int) (bandOffset + p), val);
 								planes.set(x, y, val);
 							}
