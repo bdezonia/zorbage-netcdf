@@ -24,27 +24,18 @@
 package nom.bdezonia.zorbage.netcdf;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.G;
-import nom.bdezonia.zorbage.algorithm.GridIterator;
 import nom.bdezonia.zorbage.misc.DataBundle;
-import nom.bdezonia.zorbage.misc.LongUtils;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
-import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.dataview.OneDView;
-import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.TwoDView;
-import nom.bdezonia.zorbage.procedure.Procedure2;
 import nom.bdezonia.zorbage.procedure.Procedure3;
-import nom.bdezonia.zorbage.sampling.IntegerIndex;
-import nom.bdezonia.zorbage.sampling.SamplingIterator;
-import nom.bdezonia.zorbage.storage.Storage;
 import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.integer.int1.UnsignedInt1Member;
 import nom.bdezonia.zorbage.type.integer.int16.SignedInt16Member;
@@ -58,10 +49,7 @@ import nom.bdezonia.zorbage.type.integer.int8.UnsignedInt8Member;
 import nom.bdezonia.zorbage.type.real.float32.Float32Member;
 import nom.bdezonia.zorbage.type.real.float64.Float64Member;
 import nom.bdezonia.zorbage.type.string.FixedStringMember;
-import nom.bdezonia.zorbage.type.string.StringMember;
 import ucar.ma2.Array;
-import ucar.nc2.Dimension;
-import ucar.nc2.Dimensions;
 import ucar.nc2.NetcdfFile;
 import ucar.nc2.NetcdfFiles;
 import ucar.nc2.Variable;
@@ -89,7 +77,7 @@ public class NetCDF {
 
 			for (Variable var : vars) {
 			
-				Tuple2<Algebra<?,?>, DimensionedDataSource<?>> dataSource = readVar(var);
+				Tuple2<Algebra<?,?>, DimensionedDataSource<?>> dataSource = readVar(var, filename);
 				
 				if (dataSource == null)
 					continue;
@@ -144,7 +132,8 @@ public class NetCDF {
 		return bundle;
 	}
 	
-	private static Tuple2<Algebra<?,?>, DimensionedDataSource<?>> readVar(Variable var) {
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	private static Tuple2<Algebra<?,?>, DimensionedDataSource<?>> readVar(Variable var, String filename) {
 		String name = var.getNameAndDimensions();
 		System.out.println("Var "+name);
 		System.out.println("  shape " + Arrays.toString(var.getShape()));
@@ -153,12 +142,62 @@ public class NetCDF {
 		System.out.println("  rank " + var.getRank());
 		System.out.println("  size " + var.getSize());
 		System.out.println("  units " + var.getUnitsString());
+
+		int rank = var.getRank();
 		
 		long[] dims = new long[var.getRank()];
 		for (int i = 0; i < dims.length; i++) {
 			dims[i] = var.getDimension(i).getLength();
 		}
+		
+		//System.out.println("Original DIMs = "+Arrays.toString(dims));
+		
+		// now fix dims in various ways to undo some netcdf weirdness
+		
+		// never allocate a rank 0 DS, treats a ssingle number rank 1 list of 1 element
+		if (rank == 0)
+			dims = new long[] {1};
+		
+		//System.out.println("Rank 0 to 1: DIMs = "+Arrays.toString(dims));
+		
+		// reverse dims because coord systems differ
 
+		long[] tmpDims = dims.clone();
+		for (int i = 0; i < dims.length; i++) {
+			tmpDims[dims.length-1-i] = dims[i];
+		}
+		dims = tmpDims;
+		
+		//System.out.println("Reverse: DIMs = "+Arrays.toString(dims));
+		
+		// remove coords with size of 1 when its position is beyond x or y axes
+		
+		tmpDims = dims.clone();
+		int numToKill = 0;
+		for (int i = 2; i < dims.length; i++) {
+			if (dims[i] == 1)
+				numToKill++;
+		}
+		if (numToKill > 0) {
+			tmpDims = new long[dims.length - numToKill];
+			int valid = 0;
+			if (dims.length > 0) {
+				tmpDims[0] = dims[0];
+				valid++;
+			}
+			if (dims.length > 1) {
+				tmpDims[1] = dims[1];
+				valid++;
+			}
+			for (int i = 2; i < dims.length; i++) {
+				if (dims[i] != 1)
+					tmpDims[valid++] = dims[i];
+			}
+		}
+		dims = tmpDims;
+
+		//System.out.println("Remove size 1: DIMs = "+Arrays.toString(dims));
+		
 		String dataType = var.getDataType().toString();
 		
 		Algebra<?,Allocatable> algebra = zorbageAlgebra(dataType);
@@ -182,11 +221,14 @@ public class NetCDF {
 		
 		dataSource.setName(var.getNameAndDimensions());
 		
+		dataSource.setSource(filename);
+
 		dataSource.setValueUnit(var.getUnitsString());
 		
 		return new Tuple2<>(algebra, dataSource);
 	}
 
+	@SuppressWarnings("unchecked")
 	private static <T extends Algebra<T,U>, U extends Allocatable<U>>
 		T zorbageAlgebra(String netcdfType)
 	{
@@ -359,18 +401,22 @@ public class NetCDF {
 		return null;
 	}
 
-	private static void importValues(Algebra algebra, Variable var, Procedure3<Array,Integer,Object> converter, DimensionedDataSource<Object> dataSource) {
+	private static void importValues(Algebra<?,?> algebra, Variable var, Procedure3<Array,Integer,Object> converter, DimensionedDataSource<Object> dataSource) {
 
 		System.out.println("VAR RANK "+var.getRank());
 		System.out.println("DS NDIMS "+dataSource.numDimensions());
 		
 		Array array = null;
 
+		// since I munge dims elsewhere these can differ
 		//int rank = var.getRank();
 		int rank = dataSource.numDimensions();
 		
-		if (rank <= 0) {
+		if (rank < 0) {
 			throw new IllegalArgumentException("unsupported rank in variable.");
+		}
+		else if (rank == 0) {
+			throw new IllegalArgumentException("unexpected code fall through case");
 		}
 		else if (rank == 1) {
 			
@@ -390,7 +436,7 @@ public class NetCDF {
 		}
 		else if (rank == 2) {
 			
-			// TODO: only call once?
+			// TODO: only call read() once?
 			
 			try {
 				array = var.read();
@@ -406,12 +452,12 @@ public class NetCDF {
 			
 			System.out.println("NROWS = "+nRows);
 			System.out.println("NCOLS = "+nCols);
-						
+
 			for (long y = 0; y < vw.d1(); y++) {
-				long ny = vw.d1() - 1 - y;
 				for (long x = 0; x < vw.d0(); x++) {
-					long nx = x;
-					int i = (int) (ny * vw.d1() + nx);
+					long ny = x;
+					long nx = vw.d1() - 1 - y;
+					int i = (int) (nx * vw.d0() + ny);
 					converter.call(array, i, val);
 					vw.set(x, y, val);
 				}				
