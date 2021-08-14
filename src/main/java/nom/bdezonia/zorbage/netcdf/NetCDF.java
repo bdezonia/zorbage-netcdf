@@ -139,7 +139,7 @@ public class NetCDF {
 		return bundle;
 	}
 	
-	@SuppressWarnings({"unchecked", "rawtypes"})
+	@SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
 	private static Tuple2<Algebra<?,?>, DimensionedDataSource<?>> readVar(Variable var, String filename) {
 
 		// TODO try as I might I cannot find any info about axis calibrations/scales/offsets.
@@ -493,7 +493,7 @@ public class NetCDF {
 			PlaneView<Object> planes = new PlaneView<Object>(dataSource, 0, 1);
 
 			// debugging with one dataset implies that it loads the entire dataset
-			//   into ram even if it comproses 10 planes. Maybe this is not always
+			//   into ram even if it comprises 10 planes. Maybe this is not always
 			//   true. Must investigate.
 			try {
 				array = var.read();
@@ -532,6 +532,8 @@ public class NetCDF {
 						// TODO : this cast on offset+i is troubling
 						// Why do array get() routines use ints and array size()
 						// routines use longs?
+						if ((offsetInArray + i) >= Integer.MAX_VALUE)
+							throw new IllegalArgumentException("Num dims >= 3 case: index overflow!");
 						converter.call(array, (int) (offsetInArray + i), val);
 						planes.set(x, y, val);
 					}
