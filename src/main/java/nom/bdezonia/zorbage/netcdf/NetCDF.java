@@ -30,12 +30,16 @@ import java.util.List;
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.G;
+import nom.bdezonia.zorbage.algorithm.GridIterator;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.dataview.OneDView;
+import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.procedure.Procedure3;
+import nom.bdezonia.zorbage.sampling.IntegerIndex;
+import nom.bdezonia.zorbage.sampling.SamplingIterator;
 import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.integer.int1.UnsignedInt1Member;
 import nom.bdezonia.zorbage.type.integer.int16.SignedInt16Member;
@@ -134,14 +138,6 @@ public class NetCDF {
 	
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	private static Tuple2<Algebra<?,?>, DimensionedDataSource<?>> readVar(Variable var, String filename) {
-		String name = var.getNameAndDimensions();
-		System.out.println("Var "+name);
-		System.out.println("  shape " + Arrays.toString(var.getShape()));
-		System.out.println("  dims  " + Arrays.toString(var.getDimensions().toArray()));
-		System.out.println("  data type " + var.getDataType());
-		System.out.println("  rank " + var.getRank());
-		System.out.println("  size " + var.getSize());
-		System.out.println("  units " + var.getUnitsString());
 
 		int rank = var.getRank();
 		
@@ -150,15 +146,11 @@ public class NetCDF {
 			dims[i] = var.getDimension(i).getLength();
 		}
 		
-		//System.out.println("Original DIMs = "+Arrays.toString(dims));
-		
 		// now fix dims in various ways to undo some netcdf weirdness
 		
 		// never allocate a rank 0 DS, treats a ssingle number rank 1 list of 1 element
 		if (rank == 0)
 			dims = new long[] {1};
-		
-		//System.out.println("Rank 0 to 1: DIMs = "+Arrays.toString(dims));
 		
 		// reverse dims because coord systems differ
 
@@ -167,8 +159,6 @@ public class NetCDF {
 			tmpDims[dims.length-1-i] = dims[i];
 		}
 		dims = tmpDims;
-		
-		//System.out.println("Reverse: DIMs = "+Arrays.toString(dims));
 		
 		// remove coords with size of 1 when its position is beyond x or y axes
 		
@@ -196,8 +186,6 @@ public class NetCDF {
 		}
 		dims = tmpDims;
 
-		//System.out.println("Remove size 1: DIMs = "+Arrays.toString(dims));
-		
 		String dataType = var.getDataType().toString();
 		
 		Algebra<?,Allocatable> algebra = zorbageAlgebra(dataType);
@@ -403,9 +391,6 @@ public class NetCDF {
 
 	private static void importValues(Algebra<?,?> algebra, Variable var, Procedure3<Array,Integer,Object> converter, DimensionedDataSource<Object> dataSource) {
 
-		System.out.println("VAR RANK "+var.getRank());
-		System.out.println("DS NDIMS "+dataSource.numDimensions());
-		
 		Array array = null;
 
 		// since I munge dims elsewhere these can differ
@@ -447,12 +432,7 @@ public class NetCDF {
 
 			TwoDView<Object> vw = new TwoDView<>(dataSource);
 			Object val = algebra.construct();
-			int nRows = var.getDimension(0).getLength();
-			int nCols = var.getDimension(1).getLength();
 			
-			System.out.println("NROWS = "+nRows);
-			System.out.println("NCOLS = "+nCols);
-
 			for (long y = 0; y < vw.d1(); y++) {
 				for (long x = 0; x < vw.d0(); x++) {
 					long ny = x;
@@ -465,11 +445,56 @@ public class NetCDF {
 		}
 		else {  // rank is 3 or more
 
-			System.out.println("MUST DO A PLANE VIEW APPROACH");
+			PlaneView<Object> planes = new PlaneView<Object>(dataSource, 0, 1);
+
+			// debugging with one dataset implies that it loads the entire dataset
+			//   into ram even if it comproses 10 planes. Maybe this is not always
+			//   true. Must investigate.
+			try {
+				array = var.read();
+			} catch (IOException ex) {
+				System.out.println("cannot read data from the variable");
+				return;
+			}
+			//System.out.println("read "+array.getSize()+" elements");
+			//System.out.println("  and plane dims = "+planes.d0()+" x "+planes.d1());
 			
-			// TODO: do a PlaneView approach
-			//   Do I need to do array.read() a bunch of times? once per plane?
-			//   what about n-d??
+			long[] higherDims = new long[dataSource.numDimensions() - 2];
+			for (int i = 0; i < higherDims.length; i++) {
+				higherDims[i] = dataSource.dimension(2 + i);
+			}
+			
+			SamplingIterator<IntegerIndex> iter = GridIterator.compute(higherDims);
+			IntegerIndex idx = new IntegerIndex(higherDims.length);
+			Object val = algebra.construct();
+			long offsetInArray = 0;
+			while (iter.hasNext()) {
+				
+				iter.next(idx);
+				
+				// I believe the planes could easily be out of order due to diff
+				// coord systems. Maybe not for 3d case. But 4d and higher?
+				// My plane position iteration order might be totally different.
+				
+				for (int i = 0; i < idx.numDimensions(); i++ ) {
+					planes.setPositionValue(i, idx.get(i));
+				}
+				
+				for (long y = 0; y < planes.d1(); y++) {
+					long nx = planes.d1() - 1 - y;
+					for (long x = 0; x < planes.d0(); x++) {
+						long ny = x;
+						int i = (int) (nx * planes.d0() + ny);
+						// TODO : this cast on offset+i is troubling
+						// Why do array get() routines use ints and array size()
+						// routines use longs?
+						converter.call(array, (int) (offsetInArray + i), val);
+						planes.set(x, y, val);
+					}
+				}
+				
+				offsetInArray += (planes.d0() * planes.d1());
+			}
 		}
 
 	}
