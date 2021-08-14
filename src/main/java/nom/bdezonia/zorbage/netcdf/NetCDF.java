@@ -142,27 +142,35 @@ public class NetCDF {
 		int rank = var.getRank();
 		
 		long[] dims = new long[var.getRank()];
+		String[] axisLabels = new String[var.getRank()];
 		for (int i = 0; i < dims.length; i++) {
 			dims[i] = var.getDimension(i).getLength();
+			axisLabels[i] = var.getDimension(i).getShortName();
 		}
 		
-		// now fix dims in various ways to undo some netcdf weirdness
+		// now fix dims and units in various ways to undo some netcdf weirdness
 		
-		// never allocate a rank 0 DS, treats a ssingle number rank 1 list of 1 element
-		if (rank == 0)
+		// never allocate a rank 0 DS, treats as single number rank 1 list of 1 element
+		if (rank == 0) {
 			dims = new long[] {1};
+			axisLabels = new String[] {"d0"};
+		}
 		
 		// reverse dims because coord systems differ
 
 		long[] tmpDims = dims.clone();
+		String[] tmpLabels = axisLabels.clone();
 		for (int i = 0; i < dims.length; i++) {
 			tmpDims[dims.length-1-i] = dims[i];
+			tmpLabels[dims.length-1-i] = axisLabels[i];
 		}
 		dims = tmpDims;
+		axisLabels = tmpLabels;
 		
 		// remove coords with size of 1 when its position is beyond x or y axes
 		
 		tmpDims = dims.clone();
+		tmpLabels = axisLabels.clone();
 		int numToKill = 0;
 		for (int i = 2; i < dims.length; i++) {
 			if (dims[i] == 1)
@@ -170,21 +178,28 @@ public class NetCDF {
 		}
 		if (numToKill > 0) {
 			tmpDims = new long[dims.length - numToKill];
+			tmpLabels = new String[dims.length - numToKill];
 			int valid = 0;
 			if (dims.length > 0) {
 				tmpDims[0] = dims[0];
+				tmpLabels[0] = axisLabels[0];
 				valid++;
 			}
 			if (dims.length > 1) {
 				tmpDims[1] = dims[1];
+				tmpLabels[1] = axisLabels[1];
 				valid++;
 			}
 			for (int i = 2; i < dims.length; i++) {
-				if (dims[i] != 1)
-					tmpDims[valid++] = dims[i];
+				if (dims[i] != 1) {
+					tmpDims[valid] = dims[i];
+					tmpLabels[valid] = axisLabels[i];
+					valid++;
+				}
 			}
 		}
 		dims = tmpDims;
+		axisLabels = tmpLabels;
 
 		String dataType = var.getDataType().toString();
 		
@@ -212,6 +227,10 @@ public class NetCDF {
 		dataSource.setSource(filename);
 
 		dataSource.setValueUnit(var.getUnitsString());
+		
+		for (int i = 0; i < axisLabels.length; i++) {
+			dataSource.setAxisType(i, axisLabels[i]);
+		}
 		
 		return new Tuple2<>(algebra, dataSource);
 	}
