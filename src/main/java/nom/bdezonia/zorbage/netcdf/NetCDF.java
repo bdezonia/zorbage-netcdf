@@ -24,7 +24,6 @@
 package nom.bdezonia.zorbage.netcdf;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
@@ -41,6 +40,7 @@ import nom.bdezonia.zorbage.procedure.Procedure3;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.sampling.SamplingIterator;
 import nom.bdezonia.zorbage.tuple.Tuple2;
+import nom.bdezonia.zorbage.type.character.CharMember;
 import nom.bdezonia.zorbage.type.integer.int1.UnsignedInt1Member;
 import nom.bdezonia.zorbage.type.integer.int16.SignedInt16Member;
 import nom.bdezonia.zorbage.type.integer.int16.UnsignedInt16Member;
@@ -124,6 +124,9 @@ public class NetCDF {
 				else if (type instanceof FixedStringMember) {
 					bundle.mergeFixedString((DimensionedDataSource<FixedStringMember>) dataSource.b());
 				}
+				else if (type instanceof CharMember) {
+					bundle.mergeChar((DimensionedDataSource<CharMember>) dataSource.b());
+				}
 				else {
 					String dataType = var.getDataType().toString();
 					System.out.println("Ignoring unknown data type : " + dataType);
@@ -139,6 +142,11 @@ public class NetCDF {
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	private static Tuple2<Algebra<?,?>, DimensionedDataSource<?>> readVar(Variable var, String filename) {
 
+		// TODO try as I might I cannot find any info about axis calibrations/scales/offsets.
+		// I did find a web page that says some people encode annotations as "scale_factor"
+		// and "add_offset" but I'm not finding them in at least some of my data. Ask in
+		// community how to find this info.
+		
 		int rank = var.getRank();
 		
 		long[] dims = new long[var.getRank()];
@@ -207,7 +215,7 @@ public class NetCDF {
 		
 		if (algebra == null) {
 			
-			System.out.println("Cannot determine how to import "+dataType);
+			System.out.println("Cannot determine how to import "+dataType+". Ignoring dataSource "+var.getFullName()+".");
 			
 			return null;
 		}		
@@ -240,8 +248,11 @@ public class NetCDF {
 		T zorbageAlgebra(String netcdfType)
 	{
 		
-		if (netcdfType.equals("char") || netcdfType.equals("String"))
+		if (netcdfType.equalsIgnoreCase("String"))
 			return (T) G.FSTRING;
+		
+		if (netcdfType.equals("char"))
+			return (T) G.CHAR;
 		
 		if (netcdfType.equals("boolean"))
 			return (T) G.UINT1;
@@ -276,23 +287,36 @@ public class NetCDF {
 		if (netcdfType.equals("double"))
 			return (T) G.DBL;
 
-		System.out.println("no algebra can be found for "+netcdfType);
+		System.out.println("No algebra can be found for "+netcdfType);
 		
 		return null;
 	}
 
 	private static Procedure3<Array,Integer,?> converter(String netcdfType) {
 		
-		if (netcdfType.equals("char") || netcdfType.equals("String"))
-			return new Procedure3<Array, Integer, FixedStringMember>() {
+		if (netcdfType.equals("char"))
+			return new Procedure3<Array, Integer, CharMember>() {
 			
 				@Override
-				public void call(Array arr, Integer i, FixedStringMember out) {
-					out.setV("" + arr.getChar(i));
+				public void call(Array arr, Integer i, CharMember out) {
+					char ch = arr.getChar(i);
+					//System.out.println("READ '"+ch+"' from position "+i+" and am storing it");
+					out.setV(ch);
 				}
 			
 			};
 		
+		if (netcdfType.equalsIgnoreCase("String"))
+			return new Procedure3<Array, Integer, FixedStringMember>() {
+			
+				@Override
+				public void call(Array arr, Integer i, FixedStringMember out) {
+					String result = arr.toString();
+					out.setV(result);
+				}
+			
+			};
+			
 		if (netcdfType.equals("boolean"))
 			return new Procedure3<Array, Integer, UnsignedInt1Member>() {
 			
@@ -403,16 +427,19 @@ public class NetCDF {
 			
 			};
 
-		System.out.println("no algebra can be found for "+netcdfType);
+		System.out.println("No algebra can be found for "+netcdfType);
 
 		return null;
 	}
 
 	private static void importValues(Algebra<?,?> algebra, Variable var, Procedure3<Array,Integer,Object> converter, DimensionedDataSource<Object> dataSource) {
 
+		Object val = algebra.construct();
+
 		Array array = null;
 
-		// since I munge dims elsewhere these can differ
+		// since I munge dims elsewhere these two values can differ
+		
 		//int rank = var.getRank();
 		int rank = dataSource.numDimensions();
 		
@@ -424,6 +451,7 @@ public class NetCDF {
 		}
 		else if (rank == 1) {
 			
+
 			try {
 				array = var.read();
 			} catch (IOException ex) {
@@ -432,7 +460,6 @@ public class NetCDF {
 			}
 
 			OneDView<Object> vw = new OneDView<>(dataSource);
-			Object val = algebra.construct();
 			for (long i = 0; i < array.getSize(); i++) {
 				converter.call(array, (int) i, val);
 				vw.set(i, val);
@@ -450,7 +477,6 @@ public class NetCDF {
 			}
 
 			TwoDView<Object> vw = new TwoDView<>(dataSource);
-			Object val = algebra.construct();
 			
 			for (long y = 0; y < vw.d1(); y++) {
 				for (long x = 0; x < vw.d0(); x++) {
@@ -485,7 +511,6 @@ public class NetCDF {
 			
 			SamplingIterator<IntegerIndex> iter = GridIterator.compute(higherDims);
 			IntegerIndex idx = new IntegerIndex(higherDims.length);
-			Object val = algebra.construct();
 			long offsetInArray = 0;
 			while (iter.hasNext()) {
 				
