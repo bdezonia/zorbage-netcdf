@@ -139,6 +139,10 @@ public class NetCDF {
 		return bundle;
 	}
 	
+	// BDZ 8-15-21
+	// Note re: using deprecated NetCDF code: I looked in the latest code on their github site and
+	//   the getShortName() is not deprecated and is a key part of Variable/Dimension designs.
+	
 	@SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
 	private static Tuple2<Algebra<?,?>, DimensionedDataSource<?>> readVar(Variable var, String filename) {
 
@@ -215,7 +219,7 @@ public class NetCDF {
 		
 		if (algebra == null) {
 			
-			System.out.println("Cannot determine how to import "+dataType+". Ignoring dataSource "+var.getFullName()+".");
+			System.out.println("Cannot determine how to import "+dataType+". Ignoring data source "+var.getShortName()+".");
 			
 			return null;
 		}		
