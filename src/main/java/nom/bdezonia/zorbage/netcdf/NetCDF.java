@@ -30,13 +30,11 @@ import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algorithm.GridIterator;
+import nom.bdezonia.zorbage.algorithm.NdNormalize;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
-import nom.bdezonia.zorbage.dataview.OneDView;
-import nom.bdezonia.zorbage.dataview.PlaneView;
-import nom.bdezonia.zorbage.dataview.TwoDView;
-import nom.bdezonia.zorbage.procedure.Procedure3;
+import nom.bdezonia.zorbage.procedure.Procedure2;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.sampling.SamplingIterator;
 import nom.bdezonia.zorbage.tuple.Tuple2;
@@ -134,7 +132,7 @@ public class NetCDF {
 			}
 		}
 		catch (IOException e) {
-			System.out.println("Exception occured : " + e);
+			System.out.println("Exception occurred : " + e);
 		}
 		return bundle;
 	}
@@ -153,8 +151,8 @@ public class NetCDF {
 		
 		int rank = var.getRank();
 		
-		long[] dims = new long[var.getRank()];
-		String[] axisLabels = new String[var.getRank()];
+		long[] dims = new long[rank];
+		String[] axisLabels = new String[rank];
 		for (int i = 0; i < dims.length; i++) {
 			dims[i] = var.getDimension(i).getLength();
 			axisLabels[i] = var.getDimension(i).getShortName();
@@ -162,7 +160,7 @@ public class NetCDF {
 		
 		// now fix dims and units in various ways to undo some netcdf weirdness
 		
-		// never allocate a rank 0 DS, treats as single number rank 1 list of 1 element
+		// never allocate a rank 0 DS, treats as single number: a rank 1 list of 1 element
 		if (rank == 0) {
 			dims = new long[] {1};
 			axisLabels = new String[] {"d0"};
@@ -179,40 +177,6 @@ public class NetCDF {
 		dims = tmpDims;
 		axisLabels = tmpLabels;
 		
-		// remove coords with size of 1 when its position is beyond x or y axes
-		
-		tmpDims = dims.clone();
-		tmpLabels = axisLabels.clone();
-		int numToKill = 0;
-		for (int i = 2; i < dims.length; i++) {
-			if (dims[i] == 1)
-				numToKill++;
-		}
-		if (numToKill > 0) {
-			tmpDims = new long[dims.length - numToKill];
-			tmpLabels = new String[dims.length - numToKill];
-			int valid = 0;
-			if (dims.length > 0) {
-				tmpDims[0] = dims[0];
-				tmpLabels[0] = axisLabels[0];
-				valid++;
-			}
-			if (dims.length > 1) {
-				tmpDims[1] = dims[1];
-				tmpLabels[1] = axisLabels[1];
-				valid++;
-			}
-			for (int i = 2; i < dims.length; i++) {
-				if (dims[i] != 1) {
-					tmpDims[valid] = dims[i];
-					tmpLabels[valid] = axisLabels[i];
-					valid++;
-				}
-			}
-		}
-		dims = tmpDims;
-		axisLabels = tmpLabels;
-
 		String dataType = var.getDataType().toString();
 		
 		Algebra<?,Allocatable> algebra = zorbageAlgebra(dataType);
@@ -226,25 +190,41 @@ public class NetCDF {
 		
 		Allocatable type = algebra.construct(); 
 		
-		Procedure3<Array,Integer,Object> converterProc =
-				(Procedure3<Array,Integer,Object>) converter(var.getDataType().toString());
+		Procedure2<Array,Object> converterProc = (Procedure2<Array,Object>) converter(var.getDataType().toString());
 		
-		DimensionedDataSource<Object> dataSource =
-				DimensionedStorage.allocate(type, dims); 
+		DimensionedDataSource<Object> dataSource = DimensionedStorage.allocate(type, dims); 
 
 		importValues(algebra, var, converterProc, dataSource);
-		
-		dataSource.setName(var.getNameAndDimensions());
-		
-		dataSource.setSource(filename);
 
-		dataSource.setValueUnit(var.getUnitsString());
+		// some rawdata casting needed here
+
+		DimensionedDataSource<Object> finalDS = NdNormalize.compute((Algebra) algebra, (DimensionedDataSource) dataSource);
 		
-		for (int i = 0; i < axisLabels.length; i++) {
-			dataSource.setAxisType(i, axisLabels[i]);
+		finalDS.setName(var.getNameAndDimensions());
+		
+		finalDS.setSource(filename);
+
+		finalDS.setValueUnit(var.getUnitsString());
+
+		// these first two dims can have 1's in them
+		
+		if (finalDS.numDimensions() > 0)
+			finalDS.setAxisType(0, axisLabels[0]);
+			
+		if (finalDS.numDimensions() > 1)
+			finalDS.setAxisType(1, axisLabels[1]);
+		
+		// any other dims == 1 in origDs have to be accounted for;
+
+		int count = 2;
+		for (int i = 2; i < axisLabels.length; i++) {
+			if (dataSource.dimension(i) == 1)
+				continue;
+			finalDS.setAxisType(count, axisLabels[i]);
+			count++;
 		}
 		
-		return new Tuple2<>(algebra, dataSource);
+		return new Tuple2<>(algebra, finalDS);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -296,137 +276,134 @@ public class NetCDF {
 		return null;
 	}
 
-	private static Procedure3<Array,Integer,?> converter(String netcdfType) {
+	private static Procedure2<Array,?> converter(String netcdfType) {
 		
 		if (netcdfType.equals("char"))
-			return new Procedure3<Array, Integer, CharMember>() {
+			return new Procedure2<Array, CharMember>() {
 			
 				@Override
-				public void call(Array arr, Integer i, CharMember out) {
-					char ch = arr.getChar(i);
-					//System.out.println("READ '"+ch+"' from position "+i+" and am storing it");
-					out.setV(ch);
+				public void call(Array arr, CharMember out) {
+					out.setV(arr.nextChar());
 				}
 			
 			};
 		
 		if (netcdfType.equalsIgnoreCase("String"))
-			return new Procedure3<Array, Integer, FixedStringMember>() {
+			return new Procedure2<Array, FixedStringMember>() {
 			
 				@Override
-				public void call(Array arr, Integer i, FixedStringMember out) {
-					String result = arr.toString();
-					out.setV(result);
+				public void call(Array arr, FixedStringMember out) {
+					out.setV(arr.toString());
 				}
 			
 			};
 			
 		if (netcdfType.equals("boolean"))
-			return new Procedure3<Array, Integer, UnsignedInt1Member>() {
+			return new Procedure2<Array, UnsignedInt1Member>() {
 			
 				@Override
-				public void call(Array arr, Integer i, UnsignedInt1Member out) {
-					out.setV(arr.getBoolean(i) ? 1 : 0);
+				public void call(Array arr, UnsignedInt1Member out) {
+					out.setV(arr.nextBoolean() ? 1 : 0);
 				}
 			
 			};
 		
 		if (netcdfType.equals("byte") || netcdfType.equals("enum1"))
-			return new Procedure3<Array, Integer, SignedInt8Member>() {
+			return new Procedure2<Array, SignedInt8Member>() {
 			
 				@Override
-				public void call(Array arr, Integer i, SignedInt8Member out) {
-					out.setV(arr.getByte(i));
+				public void call(Array arr, SignedInt8Member out) {
+					out.setV(arr.nextByte());
 				}
 			
 			};
 		
 		if (netcdfType.equals("ubyte"))
-			return new Procedure3<Array, Integer, UnsignedInt8Member>() {
+			return new Procedure2<Array, UnsignedInt8Member>() {
 			
 				@Override
-				public void call(Array arr, Integer i, UnsignedInt8Member out) {
-					out.setV(arr.getByte(i));
+				public void call(Array arr, UnsignedInt8Member out) {
+					out.setV(arr.nextByte());
 				}
 			
 			};
 		
 		if (netcdfType.equals("short") || netcdfType.equals("enum2"))
-			return new Procedure3<Array, Integer, SignedInt16Member>() {
+			return new Procedure2<Array, SignedInt16Member>() {
 			
 				@Override
-				public void call(Array arr, Integer i, SignedInt16Member out) {
-					out.setV(arr.getShort(i));
+				public void call(Array arr, SignedInt16Member out) {
+					out.setV(arr.nextShort());
 				}
 			
 			};
 		
 		if (netcdfType.equals("ushort"))
-			return new Procedure3<Array, Integer, UnsignedInt16Member>() {
+			return new Procedure2<Array, UnsignedInt16Member>() {
 			
 				@Override
-				public void call(Array arr, Integer i, UnsignedInt16Member out) {
-					out.setV(arr.getShort(i));
+				public void call(Array arr, UnsignedInt16Member out) {
+					out.setV(arr.nextShort());
 				}
 			
 			};
 		
 		if (netcdfType.equals("int") || netcdfType.equals("enum4"))
-			return new Procedure3<Array, Integer, SignedInt32Member>() {
+			return new Procedure2<Array, SignedInt32Member>() {
 			
 				@Override
-				public void call(Array arr, Integer i, SignedInt32Member out) {
-					out.setV(arr.getInt(i));
+				public void call(Array arr, SignedInt32Member out) {
+					out.setV(arr.nextInt());
 				}
 			
 			};
 		
 		if (netcdfType.equals("uint"))
-			return new Procedure3<Array, Integer, UnsignedInt32Member>() {
+			return new Procedure2<Array, UnsignedInt32Member>() {
 			
 			@Override
-			public void call(Array arr, Integer i, UnsignedInt32Member out) {
-				out.setV(arr.getInt(i));
+			public void call(Array arr, UnsignedInt32Member out) {
+				out.setV(arr.nextInt());
 			}
 		
 		};
 		
 		if (netcdfType.equals("long"))
-			return new Procedure3<Array, Integer, SignedInt64Member>() {
+			return new Procedure2<Array, SignedInt64Member>() {
 			
 				@Override
-				public void call(Array arr, Integer i, SignedInt64Member out) {
-					out.setV(arr.getLong(i));
+				public void call(Array arr, SignedInt64Member out) {
+					out.setV(arr.nextLong());
 				}
 			
 			};
 		
 		if (netcdfType.equals("ulong"))
-			return new Procedure3<Array, Integer, UnsignedInt64Member>() {
+			return new Procedure2<Array, UnsignedInt64Member>() {
 			
 				@Override
-				public void call(Array arr, Integer i, UnsignedInt64Member out) {
-					out.setV(arr.getLong(i));
+				public void call(Array arr, UnsignedInt64Member out) {
+					out.setV(arr.nextLong());
 				}
 			
 			};
 		
 		if (netcdfType.equals("float"))
-			return new Procedure3<Array, Integer, Float32Member>() {
+			return new Procedure2<Array, Float32Member>() {
 			
 				@Override
-				public void call(Array arr, Integer i, Float32Member out) {
-					out.setV(arr.getFloat(i));
+				public void call(Array arr, Float32Member out) {
+					out.setV(arr.nextFloat());
 				}
 			
 			};
 		
 		if (netcdfType.equals("double"))
-			return new Procedure3<Array, Integer, Float64Member>() {
+			return new Procedure2<Array, Float64Member>() {
 			
 				@Override
-				public void call(Array arr, Integer i, Float64Member out) {
-					out.setV(arr.getDouble(i));
+				public void call(Array arr, Float64Member out) {
+					out.setV(arr.nextDouble());
 				}
 			
 			};
@@ -436,115 +413,64 @@ public class NetCDF {
 		return null;
 	}
 
-	private static void importValues(Algebra<?,?> algebra, Variable var, Procedure3<Array,Integer,Object> converter, DimensionedDataSource<Object> dataSource) {
-
+	private static void importValues(Algebra<?,?> algebra, Variable var,
+										Procedure2<Array,Object> converter,
+										DimensionedDataSource<Object> dataSource)
+	{
+		// netcdf dims are stored and data is written in reverse order
+		
+		long[] netCDFDims = new long[dataSource.numDimensions()];
+		for (int i = 0; i < netCDFDims.length; i++) {
+			netCDFDims[i] = dataSource.dimension(netCDFDims.length - 1 - i);
+		}
+		
 		Object val = algebra.construct();
 
 		Array array = null;
-
-		// since I munge dims elsewhere these two values can differ
 		
-		//int rank = var.getRank();
-		int rank = dataSource.numDimensions();
-		
-		if (rank < 0) {
-			throw new IllegalArgumentException("unsupported rank in variable.");
-		}
-		else if (rank == 0) {
-			throw new IllegalArgumentException("unexpected code fall through case");
-		}
-		else if (rank == 1) {
-			
+		// iterate NetCDF space
 
-			try {
-				array = var.read();
-			} catch (IOException ex) {
-				System.out.println("cannot read data from the variable");
-				return;
-			}
+		SamplingIterator<IntegerIndex> iter = GridIterator.compute(netCDFDims);
+		IntegerIndex netCDFIdx = new IntegerIndex(netCDFDims.length);
+		IntegerIndex zorbageIdx = new IntegerIndex(netCDFDims.length);
+		while (iter.hasNext()) {
 
-			OneDView<Object> vw = new OneDView<>(dataSource);
-			for (long i = 0; i < array.getSize(); i++) {
-				converter.call(array, (int) i, val);
-				vw.set(i, val);
-			}
-		}
-		else if (rank == 2) {
-			
-			// TODO: only call read() once?
-			
-			try {
-				array = var.read();
-			} catch (IOException ex) {
-				System.out.println("cannot read data from the variable");
-				return;
+			if (array == null || ((!array.hasNext()) && (iter.hasNext()))) {
+				try {
+					array = var.read();
+					// kludge: set the Array's internal iterator so it is not null
+					array.hasNext();
+				} catch (IOException exc) {
+					System.out.println();
+					return;
+				}
 			}
 
-			TwoDView<Object> vw = new TwoDView<>(dataSource);
+			// get the next value from the array and convert it into a zorbage type value
 			
-			for (long y = 0; y < vw.d1(); y++) {
-				for (long x = 0; x < vw.d0(); x++) {
-					long ny = x;
-					long nx = vw.d1() - 1 - y;
-					int i = (int) (nx * vw.d0() + ny);
-					converter.call(array, i, val);
-					vw.set(x, y, val);
-				}				
-			}
-		}
-		else {  // rank is 3 or more
+			converter.call(array, val);
+			
+			// update the netcdf coord to point to the location associated with value just read
+			
+			iter.next(netCDFIdx);
+			
+			// now xform coords from netcdf space to zorbage space
 
-			PlaneView<Object> planes = new PlaneView<Object>(dataSource, 0, 1);
-
-			// debugging with one dataset implies that it loads the entire dataset
-			//   into ram even if it comprises 10 planes. Maybe this is not always
-			//   true. Must investigate.
-			try {
-				array = var.read();
-			} catch (IOException ex) {
-				System.out.println("cannot read data from the variable");
-				return;
-			}
-			//System.out.println("read "+array.getSize()+" elements");
-			//System.out.println("  and plane dims = "+planes.d0()+" x "+planes.d1());
-			
-			long[] higherDims = new long[dataSource.numDimensions() - 2];
-			for (int i = 0; i < higherDims.length; i++) {
-				higherDims[i] = dataSource.dimension(2 + i);
-			}
-			
-			SamplingIterator<IntegerIndex> iter = GridIterator.compute(higherDims);
-			IntegerIndex idx = new IntegerIndex(higherDims.length);
-			long offsetInArray = 0;
-			while (iter.hasNext()) {
+			int maxD = netCDFIdx.numDimensions() - 1;
+			int yDimPos = maxD - 1;
+			for (int i = 0; i < netCDFDims.length; i++) {
 				
-				iter.next(idx);
+				long pos = netCDFIdx.get(maxD - i);
 				
-				// I believe the planes could easily be out of order due to diff
-				// coord systems. Maybe not for 3d case. But 4d and higher?
-				// My plane position iteration order might be totally different.
-				
-				for (int i = 0; i < idx.numDimensions(); i++ ) {
-					planes.setPositionValue(i, idx.get(i));
+				// of course NetCDF screws up the Y dim
+				if (i == yDimPos) {
+					pos = netCDFDims[yDimPos] - 1 - pos;
 				}
 				
-				for (long y = 0; y < planes.d1(); y++) {
-					long nx = planes.d1() - 1 - y;
-					for (long x = 0; x < planes.d0(); x++) {
-						long ny = x;
-						int i = (int) (nx * planes.d0() + ny);
-						// TODO : this cast on offset+i is troubling
-						// Why do array get() routines use ints and array size()
-						// routines use longs?
-						if ((offsetInArray + i) >= Integer.MAX_VALUE)
-							throw new IllegalArgumentException("Num dims >= 3 case: index overflow!");
-						converter.call(array, (int) (offsetInArray + i), val);
-						planes.set(x, y, val);
-					}
-				}
-				
-				offsetInArray += (planes.d0() * planes.d1());
+				zorbageIdx.set(i, pos);
 			}
+			
+			dataSource.set(zorbageIdx, val);
 		}
 	}
 }
