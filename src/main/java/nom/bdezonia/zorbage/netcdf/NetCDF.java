@@ -30,10 +30,10 @@ import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algorithm.GridIterator;
-import nom.bdezonia.zorbage.algorithm.NdNormalize;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
+import nom.bdezonia.zorbage.data.NdData;
 import nom.bdezonia.zorbage.procedure.Procedure2;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.sampling.SamplingIterator;
@@ -69,7 +69,6 @@ public class NetCDF {
 	 * @return
 	 * @throws IOException
 	 */
-	@SuppressWarnings("unchecked")
 	public static DataBundle loadAllDatasets(String filename) {
 		DataBundle bundle = new DataBundle();
 		try {
@@ -84,57 +83,62 @@ public class NetCDF {
 				if (dataSource == null)
 					continue;
 				
-				Object type = dataSource.a().construct();
-				
-				if (type instanceof UnsignedInt1Member) {
-					bundle.mergeUInt1((DimensionedDataSource<UnsignedInt1Member>) dataSource.b());
-				}
-				else if (type instanceof UnsignedInt8Member) {
-					bundle.mergeUInt8((DimensionedDataSource<UnsignedInt8Member>) dataSource.b());
-				}
-				else if (type instanceof SignedInt8Member) {
-					bundle.mergeInt8((DimensionedDataSource<SignedInt8Member>) dataSource.b());
-				}
-				else if (type instanceof UnsignedInt16Member) {
-					bundle.mergeUInt16((DimensionedDataSource<UnsignedInt16Member>) dataSource.b());
-				}
-				else if (type instanceof SignedInt16Member) {
-					bundle.mergeInt16((DimensionedDataSource<SignedInt16Member>) dataSource.b());
-				}
-				else if (type instanceof UnsignedInt32Member) {
-					bundle.mergeUInt32((DimensionedDataSource<UnsignedInt32Member>) dataSource.b());
-				}
-				else if (type instanceof SignedInt32Member) {
-					bundle.mergeInt32((DimensionedDataSource<SignedInt32Member>) dataSource.b());
-				}
-				else if (type instanceof UnsignedInt64Member) {
-					bundle.mergeUInt64((DimensionedDataSource<UnsignedInt64Member>) dataSource.b());
-				}
-				else if (type instanceof SignedInt64Member) {
-					bundle.mergeInt64((DimensionedDataSource<SignedInt64Member>) dataSource.b());
-				}
-				else if (type instanceof Float32Member) {
-					bundle.mergeFlt32((DimensionedDataSource<Float32Member>) dataSource.b());
-				}
-				else if (type instanceof Float64Member) {
-					bundle.mergeFlt64((DimensionedDataSource<Float64Member>) dataSource.b());
-				}
-				else if (type instanceof FixedStringMember) {
-					bundle.mergeFixedString((DimensionedDataSource<FixedStringMember>) dataSource.b());
-				}
-				else if (type instanceof CharMember) {
-					bundle.mergeChar((DimensionedDataSource<CharMember>) dataSource.b());
-				}
-				else {
-					String dataType = var.getDataType().toString();
-					System.out.println("Ignoring unknown data type : " + dataType);
-				}
+				merge(bundle, dataSource, var.getDataType().toString());
 			}
 		}
 		catch (IOException e) {
 			System.out.println("Exception occurred : " + e);
 		}
 		return bundle;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private static void merge(DataBundle bundle, Tuple2<Algebra<?,?>, DimensionedDataSource<?>> dataSource, String dataType) {
+		
+		Object type = dataSource.a().construct();
+		
+		if (type instanceof UnsignedInt1Member) {
+			bundle.mergeUInt1((DimensionedDataSource<UnsignedInt1Member>) dataSource.b());
+		}
+		else if (type instanceof UnsignedInt8Member) {
+			bundle.mergeUInt8((DimensionedDataSource<UnsignedInt8Member>) dataSource.b());
+		}
+		else if (type instanceof SignedInt8Member) {
+			bundle.mergeInt8((DimensionedDataSource<SignedInt8Member>) dataSource.b());
+		}
+		else if (type instanceof UnsignedInt16Member) {
+			bundle.mergeUInt16((DimensionedDataSource<UnsignedInt16Member>) dataSource.b());
+		}
+		else if (type instanceof SignedInt16Member) {
+			bundle.mergeInt16((DimensionedDataSource<SignedInt16Member>) dataSource.b());
+		}
+		else if (type instanceof UnsignedInt32Member) {
+			bundle.mergeUInt32((DimensionedDataSource<UnsignedInt32Member>) dataSource.b());
+		}
+		else if (type instanceof SignedInt32Member) {
+			bundle.mergeInt32((DimensionedDataSource<SignedInt32Member>) dataSource.b());
+		}
+		else if (type instanceof UnsignedInt64Member) {
+			bundle.mergeUInt64((DimensionedDataSource<UnsignedInt64Member>) dataSource.b());
+		}
+		else if (type instanceof SignedInt64Member) {
+			bundle.mergeInt64((DimensionedDataSource<SignedInt64Member>) dataSource.b());
+		}
+		else if (type instanceof Float32Member) {
+			bundle.mergeFlt32((DimensionedDataSource<Float32Member>) dataSource.b());
+		}
+		else if (type instanceof Float64Member) {
+			bundle.mergeFlt64((DimensionedDataSource<Float64Member>) dataSource.b());
+		}
+		else if (type instanceof FixedStringMember) {
+			bundle.mergeFixedString((DimensionedDataSource<FixedStringMember>) dataSource.b());
+		}
+		else if (type instanceof CharMember) {
+			bundle.mergeChar((DimensionedDataSource<CharMember>) dataSource.b());
+		}
+		else {
+			System.out.println("Ignoring unknown data type : " + dataType);
+		}
 	}
 	
 	// BDZ 8-15-21
@@ -163,7 +167,7 @@ public class NetCDF {
 		// never allocate a rank 0 DS, treats as single number: a rank 1 list of 1 element
 		if (rank == 0) {
 			dims = new long[] {1};
-			axisLabels = new String[] {"d0"};
+			axisLabels = new String[] {"value"};
 		}
 		
 		// reverse dims because coord systems differ
@@ -196,9 +200,9 @@ public class NetCDF {
 
 		importValues(algebra, var, converterProc, dataSource);
 
-		// some rawdata casting needed here
-
-		DimensionedDataSource<Object> finalDS = NdNormalize.compute((Algebra) algebra, (DimensionedDataSource) dataSource);
+		long[] compressedDims = normalizeDims(dims);
+		
+		DimensionedDataSource<?> finalDS = new NdData<>(compressedDims, dataSource.rawData());
 		
 		finalDS.setName(var.getNameAndDimensions());
 		
@@ -227,6 +231,36 @@ public class NetCDF {
 		return new Tuple2<>(algebra, finalDS);
 	}
 
+	// remove dimensions of size one when they are not x nor y
+	
+	private static long[] normalizeDims(long[] dims) {
+
+		int count = 0;
+		if (dims.length > 0) {
+			count++;
+		}
+		if (dims.length > 1) {
+			count++;
+		}
+		for (int d = 2; d < dims.length; d++) {
+			if (dims[d] > 1) {
+				count++;
+			}
+		}
+		
+		long[] newDims = new long[count];
+
+		newDims = new long[count];
+		int i = 0;
+		for (int d = 0; d < dims.length; d++) {
+			if (d == 0 || d == 1 || dims[d] > 1) {
+				newDims[i++] = dims[d];
+			}
+		}
+		
+		return newDims;
+	}
+	
 	@SuppressWarnings("unchecked")
 	private static <T extends Algebra<T,U>, U extends Allocatable<U>>
 		T zorbageAlgebra(String netcdfType)
@@ -441,7 +475,7 @@ public class NetCDF {
 					// kludge: set the Array's internal iterator so it is not null
 					array.hasNext();
 				} catch (IOException exc) {
-					System.out.println();
+					System.out.println("Could not read an Array from a Variable.");
 					return;
 				}
 			}
@@ -457,19 +491,37 @@ public class NetCDF {
 			// now xform coords from netcdf space to zorbage space
 
 			int maxD = netCDFIdx.numDimensions() - 1;
-			int yDimPos = maxD - 1;
-			for (int i = 0; i < netCDFDims.length; i++) {
+			for (int netcdfDim = maxD; netcdfDim >= 0; netcdfDim--) {
 				
-				long pos = netCDFIdx.get(maxD - i);
+				int zorbageDim = maxD - netcdfDim; 
 				
-				// of course NetCDF screws up the Y dim
-				if (i == yDimPos) {
-					pos = netCDFDims[yDimPos] - 1 - pos;
+				long netcdfPos = netCDFIdx.get(netcdfDim);
+
+				long zorbagePos;
+				
+				// of course NetCDF has a different Y dim convention
+
+				if (zorbageDim == 1) {
+					
+					long netcdfY = netcdfPos;
+					
+					// flip Y
+					long flippedY = netCDFDims[netcdfDim] - 1 - netcdfY;
+					
+					// my old code did a coord xform right here. But I've changed approaches
+					// and I don't know how to port my old approach. But must do some linear
+					// transform here.
+							
+					zorbagePos = flippedY;
 				}
-				
-				zorbageIdx.set(i, pos);
+				else {
+					
+					zorbagePos = netcdfPos;
+				}
+
+				zorbageIdx.set(zorbageDim, zorbagePos);
 			}
-			
+
 			dataSource.set(zorbageIdx, val);
 		}
 	}
