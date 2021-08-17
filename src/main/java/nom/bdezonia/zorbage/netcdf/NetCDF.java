@@ -451,11 +451,12 @@ public class NetCDF {
 										Procedure2<Array,Object> converter,
 										DimensionedDataSource<Object> dataSource)
 	{
-		// netcdf dims are stored and data is written in reverse order
+		// netcdf dims are stored and data is written in reverse order.
+		// but to simplify code ignore that for now.
 		
 		long[] netCDFDims = new long[dataSource.numDimensions()];
 		for (int i = 0; i < netCDFDims.length; i++) {
-			netCDFDims[i] = dataSource.dimension(netCDFDims.length - 1 - i);
+			netCDFDims[i] = dataSource.dimension(i);
 		}
 		
 		Object val = algebra.construct();
@@ -491,27 +492,21 @@ public class NetCDF {
 			// now xform coords from netcdf space to zorbage space
 
 			int maxD = netCDFIdx.numDimensions() - 1;
-			for (int netcdfDim = maxD; netcdfDim >= 0; netcdfDim--) {
+			for (int netcdfDim = 0; netcdfDim <= maxD; netcdfDim++) {
 				
-				int zorbageDim = maxD - netcdfDim; 
+				int zorbageDim = netcdfDim;
 				
 				long netcdfPos = netCDFIdx.get(netcdfDim);
-
+				
 				long zorbagePos;
 				
 				// of course NetCDF has a different Y dim convention
 
 				if (zorbageDim == 1) {
-					
-					long netcdfY = netcdfPos;
-					
+
 					// flip Y
-					long flippedY = netCDFDims[netcdfDim] - 1 - netcdfY;
+					long flippedY = netCDFDims[netcdfDim] - 1 - netcdfPos;
 					
-					// my old code did a coord xform right here. But I've changed approaches
-					// and I don't know how to port my old approach. But must do some linear
-					// transform here.
-							
 					zorbagePos = flippedY;
 				}
 				else {
