@@ -52,6 +52,7 @@ import nom.bdezonia.zorbage.type.real.float32.Float32Member;
 import nom.bdezonia.zorbage.type.real.float64.Float64Member;
 import nom.bdezonia.zorbage.type.string.FixedStringMember;
 import ucar.ma2.Array;
+import ucar.nc2.Attribute;
 import ucar.nc2.NetcdfFile;
 import ucar.nc2.NetcdfFiles;
 import ucar.nc2.Variable;
@@ -152,6 +153,30 @@ public class NetCDF {
 		// I did find a web page that says some people encode annotations as "scale_factor"
 		// and "add_offset" but I'm not finding them in at least some of my data. Ask in
 		// community how to find this info.
+
+		double varScale = 0;
+		double varOffset = 0;
+		
+		boolean varHasScale = false;
+		boolean varHasOffset = false;
+		
+		Attribute att;
+		att = var.attributes().findAttribute("scale_factor");
+		if (att != null) {
+			Number value = att.getNumericValue();
+			if (value != null) {
+				varHasScale = true;
+				varScale = value.doubleValue();
+			}
+		}
+		att = var.attributes().findAttribute("add_offset");
+		if (att != null) {
+			Number value = att.getNumericValue();
+			if (value != null) {
+				varHasOffset = true;
+				varOffset = value.doubleValue();
+			}
+		}
 		
 		int rank = var.getRank();
 		
@@ -212,11 +237,13 @@ public class NetCDF {
 
 		// these first two dims can have 1's in them
 		
-		if (finalDS.numDimensions() > 0)
+		if (finalDS.numDimensions() > 0) {
 			finalDS.setAxisType(0, axisLabels[0]);
+		}
 			
-		if (finalDS.numDimensions() > 1)
+		if (finalDS.numDimensions() > 1) {
 			finalDS.setAxisType(1, axisLabels[1]);
+		}
 		
 		// any other dims == 1 in origDs have to be accounted for;
 
@@ -228,6 +255,25 @@ public class NetCDF {
 			count++;
 		}
 		
+		// Finally capture any special scaling if necessary
+		//   In practice maybe people scale Short backed files into Doubles this way
+		//   thus saving storage space. Nifti and/or Ecat do similar things.  
+		
+		if (varHasScale || varHasOffset) {
+
+			// TODO: scale the values of the output DS
+			
+			// Make a Double backed DS
+			
+			// Use PrimConvert to fill doubles from the finalDS above
+			//   Can we guarantee that all our supported types in this reader
+			//   implement PrimConvserion?  
+			
+			// then scale/offset the new list in place using var_offset and varScale
+			
+			// and set algebra and final DS to these Double backed algebra and DS
+		}
+
 		return new Tuple2<>(algebra, finalDS);
 	}
 
