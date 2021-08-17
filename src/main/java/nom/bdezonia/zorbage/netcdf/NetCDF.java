@@ -154,7 +154,7 @@ public class NetCDF {
 		// and "add_offset" but I'm not finding them in at least some of my data. Ask in
 		// community how to find this info.
 
-		double varScale = 0;
+		double varScale = 1;
 		double varOffset = 0;
 		
 		boolean varHasScale = false;
