@@ -81,6 +81,12 @@ public class Main
 		for (DimensionedDataSource<?> ds : data.dbls) {
 			dump(ds, "double");
 		}
+		for (DimensionedDataSource<?> ds : data.fstrs) {
+			dump(ds, "fstrings");
+		}
+		for (DimensionedDataSource<?> ds : data.chars) {
+			dump(ds, "char");
+		}
 		/*
 		for (String key : data.chars.keySet()) {
 			System.out.println("CHARACTER DATA *******************************************");
