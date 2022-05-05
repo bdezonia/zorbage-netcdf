@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.bdezonia</groupId>
   <artifactId>zorbage-netcdf</artifactId>
-  <version>0.1.4-SNAPSHOT</version>
+  <version>0.1.4</version>
   <name>zorbage-netcdf</name>
   <description>zorbage-netcdf: code for using the NetCDF data file loading library to populate data into zorbage structures for further processing</description>
   <url>https://github.com/bdezonia/zorbage-netcdf</url>
@@ -69,7 +69,7 @@
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage</artifactId>
-      <version>1.9.8-SNAPSHOT</version>
+      <version>1.9.8</version>
     </dependency>
   
     <dependency>
@@ -82,14 +82,14 @@
     <dependency>
       <groupId>edu.ucar</groupId>
       <artifactId>netcdf4</artifactId>
-      <version>5.3.2</version>
+      <version>5.3.3</version>
       <scope>runtime</scope>
     </dependency>
 
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-jdk14</artifactId>
-      <version>1.7.30</version>
+      <version>1.7.36</version>
       <scope>runtime</scope>
     </dependency>
 
