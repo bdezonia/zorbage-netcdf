@@ -75,14 +75,14 @@
     <dependency>
       <groupId>edu.ucar</groupId>
       <artifactId>cdm-core</artifactId>
-      <version>5.3.2</version>
+      <version>5.4.2</version>
       <scope>compile</scope>
     </dependency>
 
     <dependency>
       <groupId>edu.ucar</groupId>
       <artifactId>netcdf4</artifactId>
-      <version>5.3.3</version>
+      <version>5.4.2</version>
       <scope>runtime</scope>
     </dependency>
 
