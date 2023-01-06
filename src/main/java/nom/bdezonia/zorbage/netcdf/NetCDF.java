@@ -272,6 +272,10 @@ public class NetCDF {
 			// then scale/offset the new list in place using var_offset and varScale
 			
 			// and set algebra and final DS to these Double backed algebra and DS
+			
+			// MUCH LATER IDEA:
+			//   ScaleByDouble(alg, alg.construct(varScale), finalDS.rawData());
+			//   OffsetByDouble(alg, alg.construct(varOffset), finalDS.rawData());
 		}
 
 		return new Tuple2<>(algebra, finalDS);
