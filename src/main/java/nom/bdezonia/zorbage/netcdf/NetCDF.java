@@ -26,14 +26,18 @@ package nom.bdezonia.zorbage.netcdf;
 import java.io.IOException;
 import java.util.List;
 
+import nom.bdezonia.zorbage.algebra.Addition;
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algorithm.GridIterator;
+import nom.bdezonia.zorbage.algorithm.OffsetByDouble;
+import nom.bdezonia.zorbage.algorithm.ScaleByDouble;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.data.NdData;
+import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.procedure.Procedure2;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.sampling.SamplingIterator;
@@ -70,7 +74,10 @@ public class NetCDF {
 	 * @return
 	 * @throws IOException
 	 */
-	public static DataBundle loadAllDatasets(String filename) {
+	public static
+	 		<T extends Algebra<T,U> & Addition<U> & nom.bdezonia.zorbage.algebra.ScaleByDouble<U>, U>
+		DataBundle loadAllDatasets(String filename)
+	{
 		DataBundle bundle = new DataBundle();
 		try {
 			NetcdfFile file = NetcdfFiles.open(filename);
@@ -79,7 +86,7 @@ public class NetCDF {
 
 			for (Variable var : vars) {
 			
-				Tuple2<Algebra<?,?>, DimensionedDataSource<?>> dataSource = readVar(var, filename);
+				Tuple2<T, DimensionedDataSource<U>> dataSource = readVar(var, filename);
 				
 				if (dataSource == null)
 					continue;
@@ -94,8 +101,10 @@ public class NetCDF {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static void merge(DataBundle bundle, Tuple2<Algebra<?,?>, DimensionedDataSource<?>> dataSource, String dataType) {
-		
+	private static
+	 	<T extends Algebra<T,U> & nom.bdezonia.zorbage.algebra.ScaleByDouble<U>, U>
+		void merge(DataBundle bundle, Tuple2<T, DimensionedDataSource<U>> dataSource, String dataType)
+	{
 		Object type = dataSource.a().construct();
 		
 		if (type instanceof UnsignedInt1Member) {
@@ -147,8 +156,9 @@ public class NetCDF {
 	//   the getShortName() is not deprecated and is a key part of Variable/Dimension designs.
 	
 	@SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
-	private static Tuple2<Algebra<?,?>, DimensionedDataSource<?>> readVar(Variable var, String filename) {
-
+	private static <T extends Algebra<T,U> & Addition<U> & nom.bdezonia.zorbage.algebra.ScaleByDouble<U>, U>
+		Tuple2<T, DimensionedDataSource<U>> readVar(Variable var, String filename)
+	{
 		// TODO try as I might I cannot find any info about axis calibrations/scales/offsets.
 		// I did find a web page that says some people encode annotations as "scale_factor"
 		// and "add_offset" but I'm not finding them in at least some of my data. Ask in
@@ -227,7 +237,7 @@ public class NetCDF {
 
 		long[] compressedDims = normalizeDims(dims);
 		
-		DimensionedDataSource<?> finalDS = new NdData<>(compressedDims, dataSource.rawData());
+		DimensionedDataSource<U> finalDS = (DimensionedDataSource<U>) new NdData<>(compressedDims, dataSource.rawData());
 		
 		finalDS.setName(var.getNameAndDimensions());
 		
@@ -257,28 +267,22 @@ public class NetCDF {
 		
 		// Finally capture any special scaling if necessary
 		//   In practice maybe people scale Short backed files into Doubles this way
-		//   thus saving storage space. Nifti and/or Ecat do similar things.  
+		//   thus saving storage space. Nifti and/or Ecat do similar things.
 		
-		if (varHasScale || varHasOffset) {
+		// NOTE: my current code does not transmute type (for instance from short
+		//   to double).
+		
+		if (varHasScale) {
+			
+			ScaleByDouble.compute((T) algebra, varScale, (IndexedDataSource<U>) finalDS.rawData(), (IndexedDataSource<U>) finalDS.rawData());
+		}
+		
+		if (varHasOffset) {
 
-			// TODO: scale the values of the output DS
-			
-			// Make a Double backed DS
-			
-			// Use PrimConvert to fill doubles from the finalDS above
-			//   Can we guarantee that all our supported types in this reader
-			//   implement PrimConvserion?  
-			
-			// then scale/offset the new list in place using var_offset and varScale
-			
-			// and set algebra and final DS to these Double backed algebra and DS
-			
-			// MUCH LATER IDEA:
-			//   ScaleByDouble(alg, alg.construct(varScale), finalDS.rawData());
-			//   OffsetByDouble(alg, alg.construct(varOffset), finalDS.rawData());
+			OffsetByDouble.compute((T) algebra, varOffset, (IndexedDataSource<U>) finalDS.rawData(), (IndexedDataSource<U>) finalDS.rawData());
 		}
 
-		return new Tuple2<>(algebra, finalDS);
+		return new Tuple2<T,DimensionedDataSource<U>>((T) algebra, finalDS);
 	}
 
 	// remove dimensions of size one when they are not x nor y
