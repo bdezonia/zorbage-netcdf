@@ -31,8 +31,8 @@ import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algorithm.GridIterator;
-import nom.bdezonia.zorbage.algorithm.OffsetByDouble;
 import nom.bdezonia.zorbage.algorithm.ScaleByDouble;
+import nom.bdezonia.zorbage.algorithm.TransformWithConstant;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
@@ -274,12 +274,19 @@ public class NetCDF {
 		
 		if (varHasScale) {
 			
-			ScaleByDouble.compute((T) algebra, varScale, (IndexedDataSource<U>) finalDS.rawData(), (IndexedDataSource<U>) finalDS.rawData());
+			ScaleByDouble.compute((T) algebra,
+									varScale,
+									(IndexedDataSource<U>) finalDS.rawData(),
+									(IndexedDataSource<U>) finalDS.rawData());
 		}
 		
 		if (varHasOffset) {
 
-			OffsetByDouble.compute((T) algebra, varOffset, (IndexedDataSource<U>) finalDS.rawData(), (IndexedDataSource<U>) finalDS.rawData());
+			TransformWithConstant.compute((T) algebra,
+											((T)algebra).add(),
+											(IndexedDataSource<U>) finalDS.rawData(),
+											(U) algebra.construct(""+varOffset),
+											(IndexedDataSource<U>) finalDS.rawData());
 		}
 
 		return new Tuple2<T,DimensionedDataSource<U>>((T) algebra, finalDS);
