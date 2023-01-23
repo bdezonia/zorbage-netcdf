@@ -34,6 +34,7 @@ import nom.bdezonia.zorbage.algorithm.GridIterator;
 import nom.bdezonia.zorbage.algorithm.ScaleByDouble;
 import nom.bdezonia.zorbage.algorithm.TransformWithConstant;
 import nom.bdezonia.zorbage.misc.DataBundle;
+import nom.bdezonia.zorbage.misc.DataSourceUtils;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.data.NdData;
@@ -515,10 +516,7 @@ public class NetCDF {
 		// netcdf dims are stored and data is written in reverse order.
 		// but to simplify code ignore that for now.
 		
-		long[] netCDFDims = new long[dataSource.numDimensions()];
-		for (int i = 0; i < netCDFDims.length; i++) {
-			netCDFDims[i] = dataSource.dimension(i);
-		}
+		long[] netCDFDims = DataSourceUtils.dimensions(dataSource);
 		
 		Object val = algebra.construct();
 
