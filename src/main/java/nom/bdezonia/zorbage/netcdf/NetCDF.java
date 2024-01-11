@@ -235,7 +235,7 @@ public class NetCDF {
 		
 		if (type instanceof FixedStringMember) {
 			
-			type = new FixedStringMember(128);
+			type = new FixedStringMember(256);
 		}
 		
 		Procedure2<Array,Object> converterProc = (Procedure2<Array,Object>) converter(var.getDataType().toString());
