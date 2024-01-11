@@ -228,13 +228,21 @@ public class NetCDF {
 			return null;
 		}		
 		
-		Allocatable type = algebra.construct(); 
+		Allocatable type = algebra.construct();
+		
+		// for fixed strings if you do not allocate a max size then
+		//   every string.setV() will do nothing.
+		
+		if (type instanceof FixedStringMember) {
+			
+			type = new FixedStringMember(128);
+		}
 		
 		Procedure2<Array,Object> converterProc = (Procedure2<Array,Object>) converter(var.getDataType().toString());
 		
-		DimensionedDataSource<Object> dataSource = DimensionedStorage.allocate(type, dims); 
+		DimensionedDataSource<Object> dataSource = DimensionedStorage.allocate(type, dims);
 
-		importValues(algebra, var, converterProc, dataSource);
+		importValues(algebra, type, var, converterProc, dataSource);
 
 		long[] compressedDims = normalizeDims(dims);
 		
@@ -509,7 +517,7 @@ public class NetCDF {
 		return null;
 	}
 
-	private static void importValues(Algebra<?,?> algebra, Variable var,
+	private static void importValues(Algebra<?,?> algebra, Object val, Variable var,
 										Procedure2<Array,Object> converter,
 										DimensionedDataSource<Object> dataSource)
 	{
@@ -518,8 +526,6 @@ public class NetCDF {
 		
 		long[] netCDFDims = DataSourceUtils.dimensions(dataSource);
 		
-		Object val = algebra.construct();
-
 		Array array = null;
 		
 		// iterate NetCDF space
