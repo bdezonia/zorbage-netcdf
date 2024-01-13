@@ -91,9 +91,7 @@ public class NetCDF {
 	
 		} catch (URISyntaxException e) {
 			
-			System.out.println("Bad name for file: "+e.getMessage());
-			
-			return new DataBundle();
+			throw new IllegalArgumentException("Bad name for file: "+e.getMessage());
 		}
 	}
 
@@ -115,8 +113,6 @@ public class NetCDF {
 	
 		try {
 		
-			System.out.println("URL is "+fileURI.toURL().toString());
-			
 			NetcdfFile file = NetcdfFiles.open(fileURI.toURL().toString());
 			
 			List<Variable> vars = file.getVariables();
