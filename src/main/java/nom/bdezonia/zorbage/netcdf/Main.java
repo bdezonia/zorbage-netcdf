@@ -47,7 +47,7 @@ public class Main
 		//String filename = args[0];
 		//String filename = "/home/bdz/images/qesdi/cru_v3_dtr_clim10.nc";
 		String filename = "/home/bdz/images/qesdi/wwf_olson2006_ecosystems.nc";
-		DataBundle data = NetCDF.loadAllDatasets(filename);
+		DataBundle data = NetCDF.readAllDatasets(filename);
 		for (DimensionedDataSource<?> ds : data.uint1s) {
 			dump(ds, "uint1");
 		}

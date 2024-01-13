@@ -77,7 +77,7 @@ public class NetCDF {
 	 */
 	public static
 	 		<T extends Algebra<T,U> & Addition<U> & nom.bdezonia.zorbage.algebra.ScaleByDouble<U>, U>
-		DataBundle loadAllDatasets(String filename)
+		DataBundle readAllDatasets(String filename)
 	{
 		DataBundle bundle = new DataBundle();
 		try {
