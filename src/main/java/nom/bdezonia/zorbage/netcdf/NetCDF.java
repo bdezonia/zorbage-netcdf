@@ -23,7 +23,10 @@
  */
 package nom.bdezonia.zorbage.netcdf;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import nom.bdezonia.zorbage.algebra.Addition;
@@ -73,21 +76,54 @@ public class NetCDF {
 	 * 
 	 * @param filename
 	 * @return
+	 */
+	public static
+	
+		DataBundle
+		
+			readAllDatasets(String filename)
+	{
+		try {
+		
+			URI uri = new URI("file", null, new File(filename).getAbsolutePath(), null);
+			
+			return readAllDatasets(uri);
+	
+		} catch (URISyntaxException e) {
+			
+			System.out.println("Bad name for file: "+e.getMessage());
+			
+			return new DataBundle();
+		}
+	}
+
+	/**
+	 * 
+	 * @param filename
+	 * @return
 	 * @throws IOException
 	 */
 	public static
-	 		<T extends Algebra<T,U> & Addition<U> & nom.bdezonia.zorbage.algebra.ScaleByDouble<U>, U>
-		DataBundle readAllDatasets(String filename)
+	
+			<T extends Algebra<T,U> & Addition<U> &
+						nom.bdezonia.zorbage.algebra.ScaleByDouble<U>,
+				U>
+		
+		DataBundle readAllDatasets(URI fileURI)
 	{
 		DataBundle bundle = new DataBundle();
+	
 		try {
-			NetcdfFile file = NetcdfFiles.open(filename);
+		
+			System.out.println("URL is "+fileURI.toURL().toString());
+			
+			NetcdfFile file = NetcdfFiles.open(fileURI.toURL().toString());
 			
 			List<Variable> vars = file.getVariables();
 
 			for (Variable var : vars) {
 			
-				Tuple2<T, DimensionedDataSource<U>> dataSource = readVar(var, filename);
+				Tuple2<T, DimensionedDataSource<U>> dataSource = readVar(var, fileURI);
 				
 				if (dataSource == null)
 					continue;
@@ -96,14 +132,19 @@ public class NetCDF {
 			}
 		}
 		catch (IOException e) {
+			
 			System.out.println("Exception occurred : " + e);
 		}
+		
 		return bundle;
 	}
 	
 	@SuppressWarnings("unchecked")
 	private static
-	 	<T extends Algebra<T,U> & nom.bdezonia.zorbage.algebra.ScaleByDouble<U>, U>
+	
+	 		<T extends Algebra<T,U> & nom.bdezonia.zorbage.algebra.ScaleByDouble<U>,
+	 			U>
+	
 		void merge(DataBundle bundle, Tuple2<T, DimensionedDataSource<U>> dataSource, String dataType)
 	{
 		Object type = dataSource.a().construct();
@@ -157,8 +198,13 @@ public class NetCDF {
 	//   the getShortName() is not deprecated and is a key part of Variable/Dimension designs.
 	
 	@SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
-	private static <T extends Algebra<T,U> & Addition<U> & nom.bdezonia.zorbage.algebra.ScaleByDouble<U>, U>
-		Tuple2<T, DimensionedDataSource<U>> readVar(Variable var, String filename)
+	private static
+	
+			<T extends Algebra<T,U> & Addition<U> &
+						nom.bdezonia.zorbage.algebra.ScaleByDouble<U>,
+				U>
+	
+		Tuple2<T, DimensionedDataSource<U>> readVar(Variable var, URI fileURI)
 	{
 		// TODO try as I might I cannot find any info about axis calibrations/scales/offsets.
 		// I did find a web page that says some people encode annotations as "scale_factor"
@@ -250,7 +296,7 @@ public class NetCDF {
 		
 		finalDS.setName(var.getNameAndDimensions());
 		
-		finalDS.setSource(filename);
+		finalDS.setSource(fileURI.toString());
 
 		finalDS.setValueUnit(var.getUnitsString());
 
@@ -332,7 +378,10 @@ public class NetCDF {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static <T extends Algebra<T,U>, U extends Allocatable<U>>
+	private static
+	
+			<T extends Algebra<T,U>, U extends Allocatable<U>>
+		
 		T zorbageAlgebra(String netcdfType)
 	{
 		
@@ -380,8 +429,10 @@ public class NetCDF {
 		return null;
 	}
 
-	private static Procedure2<Array,?> converter(String netcdfType) {
-		
+	private static
+	
+		Procedure2<Array,?> converter(String netcdfType)
+	{
 		if (netcdfType.equals("char"))
 			return new Procedure2<Array, CharMember>() {
 			
@@ -517,9 +568,11 @@ public class NetCDF {
 		return null;
 	}
 
-	private static void importValues(Algebra<?,?> algebra, Object val, Variable var,
-										Procedure2<Array,Object> converter,
-										DimensionedDataSource<Object> dataSource)
+	private static
+	
+		void importValues(Algebra<?,?> algebra, Object val, Variable var,
+							Procedure2<Array,Object> converter,
+							DimensionedDataSource<Object> dataSource)
 	{
 		// netcdf dims are stored and data is written in reverse order.
 		// but to simplify code ignore that for now.
