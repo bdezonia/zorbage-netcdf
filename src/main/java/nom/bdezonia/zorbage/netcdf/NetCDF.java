@@ -97,7 +97,7 @@ public class NetCDF {
 
 	/**
 	 * 
-	 * @param filename
+	 * @param fileURI
 	 * @return
 	 * @throws IOException
 	 */
