@@ -380,8 +380,7 @@ public class NetCDF {
 		
 		T zorbageAlgebra(String netcdfType)
 	{
-		
-		if (netcdfType.equalsIgnoreCase("String"))
+		if (netcdfType.equalsIgnoreCase("string"))
 			return (T) G.FSTRING;
 		
 		if (netcdfType.equals("char"))
@@ -439,7 +438,7 @@ public class NetCDF {
 			
 			};
 		
-		if (netcdfType.equalsIgnoreCase("String"))
+		if (netcdfType.equalsIgnoreCase("string"))
 			return new Procedure2<Array, FixedStringMember>() {
 			
 				@Override
